@@ -3,10 +3,11 @@
 const SAVE_KEY = 'toiletQueueCrisisSaveV3';
 const LEGACY_SAVE_KEY = 'toiletQueueCrisisSaveV2';
 const TICK_MS = 50;
-const SKILL_DROP_CHANCE = .6;
 const SKILL_LABELS = { comfort: '安抚', rush: '全体催促', focus: '全场疏导' };
+const SKILL_DROP_CHANCES = { '从容入厕': .5, '及时救援': .6, '极限抢救': .7, '千钧一发': .825 };
 const ORIGINAL_BG = './img/background0.png';
-const IS_LOCAL_FILE = window.location.protocol === 'file:';
+const LOCAL_HOSTS = new Set(['localhost', '0.0.0.0', '::1', '[::1]']);
+const IS_LOCAL_RUNTIME = window.location.protocol === 'file:' || LOCAL_HOSTS.has(window.location.hostname) || /^127\./.test(window.location.hostname);
 const PORTRAIT_ASSET_STATES = ['', '-anxious', '-critical', '-extreme', '-relaxed'];
 
 const AUDIO_FILES = {
@@ -22,16 +23,16 @@ const audioState = { lastPlayed: {}, active: new Set() };
 
 const BUILTIN_SCENES = [
   { id: 'park', name: '街心公园', toilets: { squat: 2, seated: 0 }, defaultCount: 8, desc: '【事故原因】社团野餐吃到了没烤熟的烤肉。公厕只有两个蹲厕，后续人群还在不断赶来。', bg: './img/background1.png' },
-  { id: 'school', name: '私立学园', toilets: { squat: 2, seated: 1 }, defaultCount: 11, desc: '【事故原因】家政课误把泻药当成糖粉。下课铃响后，三波学生陆续冲向女厕所。', bg: './img/background2.png' },
-  { id: 'comic', name: '夏日漫展', toilets: { squat: 3, seated: 1 }, defaultCount: 14, desc: '【事故原因】冷气、冰奶茶与繁复服装共同制造了危机，四个隔间很快排起长队。', bg: './img/background3.png' },
-  { id: 'dorm', name: '女子宿舍', toilets: { squat: 0, seated: 1 }, defaultCount: 6, desc: '【事故原因】变态辣火锅的后遗症在清晨集中爆发，而整层楼只有一个马桶。', bg: './img/background4.png' },
-  { id: 'mall', name: '新光百货', toilets: { squat: 3, seated: 2 }, defaultCount: 18, desc: '【事故原因】生冷海鲜冰沙引发群体性抗议。蹲厕省时，马桶则能提供更从容的救援。', bg: './img/background5.png' }
+  { id: 'school', name: '私立学园', toilets: { squat: 2, seated: 1 }, defaultCount: 12, desc: '【事故原因】家政课误把泻药当成糖粉。下课铃响后，三波学生陆续冲向女厕所。', bg: './img/background2.png' },
+  { id: 'comic', name: '夏日漫展', toilets: { squat: 3, seated: 1 }, defaultCount: 16, desc: '【事故原因】冷气、冰奶茶与繁复服装共同制造了危机，四个隔间很快排起长队。', bg: './img/background3.png' },
+  { id: 'dorm', name: '女子宿舍', toilets: { squat: 0, seated: 1 }, defaultCount: 4, desc: '【事故原因】变态辣火锅的后遗症在清晨集中爆发，而整层楼只有一个马桶。', bg: './img/background4.png' },
+  { id: 'mall', name: '新光百货', toilets: { squat: 3, seated: 2 }, defaultCount: 20, desc: '【事故原因】生冷海鲜冰沙引发群体性抗议。蹲厕省时，马桶则能提供更从容的救援。', bg: './img/background5.png' }
 ];
 
 const DIFFICULTIES = {
-  casual: { name: '轻松', patience: 1.22, decay: .86, arrivalGap: 96, score: .85 },
-  normal: { name: '标准', patience: 1, decay: 1, arrivalGap: 72, score: 1 },
-  crisis: { name: '危机', patience: .82, decay: 1.16, arrivalGap: 52, score: 1.35 }
+  casual: { name: '轻松', patience: 1.4, decay: 1, arrivalTime: 1.2, waveFactor: 6, score: .75 },
+  normal: { name: '标准', patience: 1, decay: 1, arrivalTime: 1, waveFactor: 5, score: 1 },
+  crisis: { name: '危机', patience: .6, decay: 1, arrivalTime: .8, waveFactor: 4, score: 1.5 }
 };
 
 const TRAITS = [
@@ -58,7 +59,7 @@ const TRAITS = [
 ];
 
 const NAMES = ['星奈', '紬', '柚葉', '琴音', '涼風', '奈緒', '真白', '結月', '千夏', '莉子', '詩織', '瑞希', '日鞠', '凛音', '沙耶', '千寻', '美波', '芽衣', '亚里沙', '初雪'];
-const PATIENCE_MINUTES = [18, 20, 11, 30, 9, 14, 7, 10, 13, 15, 19, 27, 11, 33, 10, 17, 8, 20, 30, 12];
+const PATIENCE_MINUTES = [14, 20, 9, 17, 8, 12, 7, 9, 11, 10, 14, 18, 9, 17, 9, 13, 7, 15, 18, 10];
 const TOILET_MINUTES = [6, 7, 3, 8, 4, 6, 3, 5, 4, 5, 7, 10, 4, 6, 4, 5, 3, 6, 8, 5];
 const IDENTITIES = ['恋爱脑的辣妹', '认真的风纪委员', '活泼的转学生', '咖啡厅头牌女仆', '知名 Coser', '慵懒的家里蹲', '暴躁的不良少女', '神秘的文学少女', '元气田径部员', '胆小的图书委员', '怕冷的千金大小姐', '传统的神社巫女', '迷糊的魔法使', '冰山御姐教师', '迷路的异界精灵', '天才少女程序员', '笨手笨脚的实习女仆', '热血的棒球队长', '出逃的异国公主', '暴走族大姐头'];
 const BIOS = [
@@ -97,6 +98,52 @@ const CHARACTER_DIALOGUES = [
   { waiting: ['这点疼算什么，比机车震动差远了。', '都站稳了，别因为排队自乱阵脚。'], urgent: ['可恶，这肚子比失控的引擎还凶！', '给我空出隔间，再慢就要翻车了！'], entry: ['稳稳刹住，技术不错。', '路线安排够利落，我认你这个领航。', '极限过弯！刚才差点车毁人亡！'], inside: ['别催，引擎过热也得等它冷下来！', '路边那杯冰饮果然有问题……'], nearDone: '故障快排完了，马上重新上路！', success: '够可靠。下次跑夜路，我让你坐头车。', fail: '彻底翻车了……这笔账我记在那家摊子头上。' }
 ];
 
+const COMFORT_DIALOGUES = [
+  '呼……先把注意力放回妆容，我还能优雅地坚持。',
+  '情绪已经稳定，队列秩序也能继续维持。',
+  '谢谢鼓励！深呼吸以后好像没那么可怕了。',
+  '职业微笑重新上线，女仆还能继续服务。',
+  '好，先放松束腰……这套衣服还能保住。',
+  '被温柔照顾的感觉……好像没那么想逃回家了。',
+  '哼，我本来就撑得住……不过谢了。',
+  '呼吸平稳了，终于又能看清书上的字。',
+  '调整呼吸、稳住核心……还能再跑一段！',
+  '谢、谢谢，大家没有在盯着我吧？我好多了。',
+  '这份安抚尚算得体，我可以继续保持礼仪。',
+  '心神已定，衣带与腹中躁动都平静了一些。',
+  '魔力波动下降了！这次安抚居然有效。',
+  '很好，我已经重新找回教师应有的从容。',
+  '温柔的气息传过来了……自然正在治愈我。',
+  '压力指标下降，系统恢复到可继续运行状态。',
+  '呜……谢谢，我会稳稳坚持，不再慌张！',
+  '全队深呼吸！队长的防线重新稳住了！',
+  '不错，这才是符合王室规格的关怀。',
+  '引擎温度降下来了，这点故障还能压住。'
+];
+
+const RUSH_DIALOGUES = [
+  '别催啦！越急越难保持优雅，马上就好！',
+  '收到催促，请外面维持秩序，我会加快处理。',
+  '我真的已经很努力啦，新学校的厕所压力也太大了！',
+  '主人请稍候，女仆正在以最高效率处理！',
+  '别拍门！扣子和束腰不是说快就能快的！',
+  '催也没用啦……我已经把剩余社交电量全用上了。',
+  '吵什么吵！我比外面的人更想赶紧结束！',
+  '请安静，故事和现实都快到结尾了。',
+  '收到！进入最后冲刺，马上交棒！',
+  '别、别催我，我一紧张肚子会更痛的！',
+  '敲门很失礼；我会尽快恢复体面。',
+  '莫催，层层衣带正在尽快整理。',
+  '反应正在加速，但催太猛可能会炸锅呀！',
+  '无需反复提醒，我正在处理紧急状况。',
+  '人类的催促声比魔兽还可怕……马上好了！',
+  '催促信号已接收，正在提高后台任务优先级。',
+  '我一急就会出错……但、但我会努力快一点！',
+  '听到了！最后一局，全力结束战斗！',
+  '竟敢催促王室事务……罢了，本公主会加快。',
+  '别轰油门了！故障排完我自然会出去！'
+];
+
 const ENTRY_TIERS = [
   { key: 'calm', min: .65, label: '从容入厕', icon: '◎' },
   { key: 'timely', min: .35, label: '及时救援', icon: '✓' },
@@ -128,7 +175,7 @@ const DIALOGUE_EMOJIS = {
 };
 
 const DEFAULT_SAVE = {
-  settings: { audio: true, volume: .5, experimental: false, customVictims: false, difficulty: 'normal', preferOriginalWeb: false },
+  settings: { audio: true, volume: .5, experimental: false, customVictims: false, difficulty: 'normal', preferOriginalWeb: false, defaultBigIcons: false, defaultUrgencySort: false },
   customScenes: [], characterOverrides: {}, selectedVictims: [], records: {}
 };
 
@@ -144,6 +191,7 @@ let toastTimer = null;
 let galleryBigMode = false;
 let galleryState = 'standard';
 let originalAssetsLoading = false;
+let webThumbnailsReady = IS_LOCAL_RUNTIME;
 
 function byId(id) { return document.getElementById(id); }
 function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
@@ -155,7 +203,7 @@ function getAssetPath(logicalPath, track) {
   const fileName = logicalPath.split('/').at(-1);
   return track === 'original' ? `./img/original/${fileName}` : `./img/thumb/${fileName.replace(/\.png$/i, '.webp')}`;
 }
-function prefersOriginalAssets() { return IS_LOCAL_FILE || Boolean(settings?.preferOriginalWeb); }
+function prefersOriginalAssets() { return IS_LOCAL_RUNTIME || Boolean(settings?.preferOriginalWeb); }
 function getAssetCandidates(logicalPath) {
   if (!isManagedAsset(logicalPath)) return [logicalPath];
   const thumbnail = getAssetPath(logicalPath, 'thumb');
@@ -200,6 +248,47 @@ function getAllImageAssets() {
   const backgrounds = Array.from({ length: 6 }, (_, id) => `./img/background${id}.png`);
   return [...backgrounds, ...portraits];
 }
+async function initializeWebThumbnails() {
+  const button = byId('btn-open-scenes');
+  const status = byId('asset-init-status');
+  if (IS_LOCAL_RUNTIME) {
+    webThumbnailsReady = true;
+    button.disabled = false;
+    status.hidden = true;
+    return;
+  }
+  webThumbnailsReady = false;
+  button.disabled = true;
+  status.hidden = false;
+  const assets = getAllImageAssets();
+  let cursor = 0;
+  let completed = 0;
+  let missing = 0;
+  const updateProgress = () => {
+    const percent = Math.round(completed / assets.length * 100);
+    button.textContent = `初始化资源 ${percent}%`;
+    status.textContent = `正在载入约 6MB 的轻量图片……${completed}/${assets.length}`;
+  };
+  updateProgress();
+  const worker = async () => {
+    while (cursor < assets.length) {
+      const logicalPath = assets[cursor++];
+      if (!await loadExactImage(getAssetPath(logicalPath, 'thumb'))) missing += 1;
+      completed += 1;
+      updateProgress();
+    }
+  };
+  await Promise.all(Array.from({ length: 6 }, worker));
+  webThumbnailsReady = true;
+  button.disabled = false;
+  button.textContent = '开始游戏';
+  status.textContent = missing ? `轻量资源初始化完成 · ${missing} 张资源未能载入` : '轻量图片已就绪 · 约 6MB';
+}
+function openScenes() {
+  if (!webThumbnailsReady) { showToast('轻量图片仍在初始化，请稍候'); return; }
+  renderSceneButtons();
+  showScreen('screen-scene');
+}
 function refreshManagedAssets() {
   document.querySelectorAll('img[data-logical]').forEach(image => setManagedImage(image, image.dataset.logical));
   document.querySelectorAll('[data-logical-bg]').forEach(element => setElementBackground(element, element.dataset.logicalBg, element.classList.contains('screen') ? 'linear-gradient(rgba(255,255,255,.28), rgba(255,238,245,.42))' : ''));
@@ -213,7 +302,7 @@ function loadExactImage(url) {
   });
 }
 async function toggleOriginalAssets() {
-  if (IS_LOCAL_FILE || originalAssetsLoading) return;
+  if (IS_LOCAL_RUNTIME || originalAssetsLoading) return;
   if (settings.preferOriginalWeb) {
     settings.preferOriginalWeb = false;
     persist();
@@ -399,8 +488,11 @@ function syncSettingsUI() {
   toggle('btn-audio', settings.audio);
   toggle('btn-exp', settings.experimental);
   toggle('btn-custom-victims', settings.customVictims);
-  byId('web-original-setting').hidden = IS_LOCAL_FILE;
-  if (!IS_LOCAL_FILE) {
+  toggle('btn-default-big-icons', settings.defaultBigIcons);
+  toggle('btn-default-urgency-sort', settings.defaultUrgencySort);
+  byId('web-original-setting').hidden = IS_LOCAL_RUNTIME;
+  byId('web-save-reminder').hidden = IS_LOCAL_RUNTIME;
+  if (!IS_LOCAL_RUNTIME) {
     toggle('btn-original-assets', settings.preferOriginalWeb);
     byId('btn-original-assets').disabled = originalAssetsLoading;
     if (!originalAssetsLoading) byId('original-assets-status').textContent = settings.preferOriginalWeb
@@ -454,7 +546,7 @@ function selectScene(scene) {
   byId('scene-desc-title').textContent = scene.name;
   byId('scene-desc-text').textContent = scene.desc;
   const toilets = normalizeToilets(scene);
-  byId('girl-count').value = clamp(scene.defaultCount || (toilets.squat + toilets.seated) * 4, 3, 20);
+  byId('girl-count').value = clamp((toilets.squat + toilets.seated) * 4, 3, 20);
   byId('victim-count-container').hidden = settings.customVictims;
   byId('btn-start').textContent = settings.customVictims ? '选择出场角色' : '开始游戏';
   byId('btn-start').disabled = false;
@@ -576,6 +668,11 @@ function toggleGalleryBigMode() {
   galleryBigMode = !galleryBigMode;
   renderGallery();
 }
+function openGallery() {
+  galleryBigMode = Boolean(settings.defaultBigIcons);
+  renderGallery();
+  showScreen('screen-gallery');
+}
 function updateCharacterStat(input) {
   const character = characters.find(item => item.id === Number(input.dataset.char));
   if (!character) return;
@@ -634,20 +731,46 @@ function beginStartFlow() {
 }
 function createRoster() {
   if (settings.customVictims) return shuffled(characters.filter(character => selectedVictims.includes(character.id)));
-  const count = clamp(Math.round(Number(byId('girl-count').value) || currentScene.defaultCount), 3, 20);
+  const toilets = normalizeToilets(currentScene);
+  const defaultCount = clamp((toilets.squat + toilets.seated) * 4, 3, 20);
+  const count = clamp(Math.round(Number(byId('girl-count').value) || defaultCount), 3, 20);
   byId('girl-count').value = count;
   return shuffled(characters).slice(0, count);
 }
 function createWaveSchedule(roster, difficulty) {
   const waveCount = roster.length < 7 ? 2 : 3;
+  const waveSizes = Array(waveCount).fill(Math.floor(roster.length / waveCount));
+  const waveOrder = shuffled(Array.from({ length: waveCount }, (_, index) => index));
+  for (let index = 0; index < roster.length % waveCount; index++) waveSizes[waveOrder[index]] += 1;
+
+  if (roster.length >= waveCount * 4 && Math.random() < .65) {
+    const candidates = shuffled(Array.from({ length: waveCount }, (_, index) => index));
+    for (const donor of candidates) {
+      if (waveSizes[donor] <= 2) continue;
+      const receivers = shuffled(candidates.filter(index => index !== donor));
+      const receiver = receivers.find(index => {
+        const adjusted = waveSizes.map((size, wave) => size + (wave === index ? 1 : 0) - (wave === donor ? 1 : 0));
+        return Math.max(...adjusted) - Math.min(...adjusted) <= 2;
+      });
+      if (receiver !== undefined) {
+        waveSizes[donor] -= 1;
+        waveSizes[receiver] += 1;
+        break;
+      }
+    }
+  }
+
   const schedule = [];
-  roster.forEach((character, index) => {
-    const wave = Math.min(waveCount - 1, Math.floor(index * waveCount / roster.length));
-    const waveStart = wave * difficulty.arrivalGap;
-    const withinWave = index % Math.ceil(roster.length / waveCount);
-    schedule.push({ character, wave: wave + 1, time: waveStart + withinWave * 5.6 });
+  const arrivalStep = 5.6 * difficulty.arrivalTime;
+  let rosterIndex = 0;
+  let waveStart = 0;
+  waveSizes.forEach((size, wave) => {
+    if (wave > 0) waveStart += (size + 6) * difficulty.waveFactor;
+    for (let withinWave = 0; withinWave < size; withinWave++) {
+      schedule.push({ character: roster[rosterIndex++], wave: wave + 1, time: waveStart + withinWave * arrivalStep });
+    }
   });
-  return schedule.sort((a, b) => a.time - b.time);
+  return schedule;
 }
 function createStalls(toilets) {
   const types = [...Array(toilets.squat).fill('squat'), ...Array(toilets.seated).fill('seated')];
@@ -667,10 +790,10 @@ function startGame() {
   if (roster.length < 3) { showToast('至少选择 3 名角色'); return; }
   const difficulty = DIFFICULTIES[settings.difficulty] || DIFFICULTIES.normal;
   game = {
-    elapsed: 0, speed: 4, paused: false, ended: false, queue: [], pending: createWaveSchedule(roster, difficulty), autoDispatchUntil: 0, urgencySort: false, bigIconMode: false,
+    elapsed: 0, speed: 4, paused: false, ended: false, queue: [], pending: createWaveSchedule(roster, difficulty), autoDispatchUntil: 0, urgencySort: Boolean(settings.defaultUrgencySort), bigIconMode: Boolean(settings.defaultBigIcons),
     stalls: createStalls(normalizeToilets(currentScene)), total: roster.length, arrived: 0, currentWave: 0,
     stats: { success: 0, fail: 0, score: 0, combo: 0, maxCombo: 0, totalWait: 0, assignments: 0, criticalSaves: 0 },
-    skills: { comfort: 0, rush: 0, focus: 0 }, difficulty, challenges: getChallenges(), outcomes: [], timer: null
+    skills: { comfort: 1, rush: 1, focus: 0 }, difficulty, challenges: getChallenges(), outcomes: [], timer: null
   };
   byId('queue-container').replaceChildren();
   byId('stall-container').replaceChildren();
@@ -793,8 +916,9 @@ function addOutcome(girl, success, details = {}) {
     waitTime: girl.waitTime || 0, ...details
   });
 }
-function maybeGrantSkill() {
-  if (Math.random() >= SKILL_DROP_CHANCE) return null;
+function maybeGrantSkill(entryTier, patienceRatio) {
+  const chance = entryTier === '千钧一发' && patienceRatio <= .05 ? 1 : (SKILL_DROP_CHANCES[entryTier] ?? .5);
+  if (Math.random() >= chance) return null;
   const skill = randomFrom(Object.keys(SKILL_LABELS));
   game.skills[skill] += 1;
   return skill;
@@ -813,9 +937,10 @@ function rescueOccupant(stall) {
   if (girl.trait.id === 'dignity' && urgency >= .75) traitBonus += 140;
   if (girl.trait.id === 'princess' && stall.type === 'seated') traitBonus += 100;
   const baseScore = 100 + urgency * 100 + game.stats.combo * 12 + traitBonus;
-  game.stats.score += Math.round(baseScore * stall.scoreMultiplier * game.difficulty.score);
+  const facilityMultiplier = 5 / Math.max(1, game.stalls.length);
+  game.stats.score += Math.round(baseScore * stall.scoreMultiplier * game.difficulty.score * facilityMultiplier);
   addOutcome(girl, true, { entryTier: girl.entryTier, toiletType: stall.type });
-  const rewardedSkill = maybeGrantSkill();
+  const rewardedSkill = maybeGrantSkill(girl.entryTier, girl.entryPatienceRatio);
   stall.occupant = null;
   stall.timeLeft = 0;
   stall.totalTime = 0;
@@ -847,6 +972,7 @@ function assignStall(characterId, toiletType) {
   stall.timeLeft = getToiletDuration(girl, toiletType) * variance;
   stall.totalTime = stall.timeLeft;
   girl.entryTier = entryTier.label;
+  girl.entryPatienceRatio = patienceRatio;
   girl.stallQuote = entryQuote;
   girl.stallQuoteUntil = game.elapsed + 28;
   girl.nextStallQuote = game.elapsed + 45 + Math.random() * 35;
@@ -874,7 +1000,8 @@ function useSkill(skill) {
     game.queue.forEach(girl => {
       const comfortRatio = .1 * (girl.trait.id === 'professional' ? 1.6 : 1);
       girl.patience = Math.min(girl.effectiveMax, girl.patience + girl.effectiveMax * comfortRatio + (elfPresent && girl.trait.id !== 'elf' ? 60 : 0));
-      girl.quote = withEmoji(girl.trait.id === 'professional' ? '职业微笑重新上线……我恢复得很好！' : '谢谢……感觉还能再坚持一下！', 'comfort');
+      girl.quote = withEmoji(COMFORT_DIALOGUES[girl.id] || '谢谢……感觉还能再坚持一下！', 'comfort');
+      girl.nextQuote = Math.max(girl.nextQuote, game.elapsed + 24);
     });
     showToast(`全场安抚生效：${game.queue.length} 人恢复最大忍耐的 10%`);
   } else if (skill === 'rush') {
@@ -885,8 +1012,9 @@ function useSkill(skill) {
       if (stall.occupant.trait.id === 'rebel') reduction = .2;
       if (stall.occupant.trait.id === 'apprentice') reduction = .15;
       stall.timeLeft = Math.max(1, stall.timeLeft * (1 - reduction));
-      stall.occupant.stallQuote = withEmoji(randomFrom(getDialogue(stall.occupant).inside), 'inside');
+      stall.occupant.stallQuote = withEmoji(RUSH_DIALOGUES[stall.occupant.id] || '外面别催啦，我已经在尽快了！', 'inside');
       stall.occupant.stallQuoteUntil = game.elapsed + 24;
+      stall.occupant.nextStallQuote = Math.max(stall.occupant.nextStallQuote, game.elapsed + 24);
     });
     showToast(`全体催促生效：${occupied.length} 个隔间剩余时间 −10%`);
   } else if (skill === 'focus') {
@@ -921,6 +1049,11 @@ function renderGame() {
   const sortButton = byId('btn-urgency-sort');
   sortButton.textContent = `紧急度排序：${game.urgencySort ? '开' : '关'}`;
   sortButton.classList.toggle('sort-active', game.urgencySort);
+  const endButton = byId('btn-end-game');
+  const readyToSettle = game.queue.length === 0 && game.pending.length === 0;
+  endButton.textContent = readyToSettle ? '直接结算' : '放弃本局';
+  endButton.classList.toggle('danger', !readyToSettle);
+  endButton.classList.toggle('settle-ready', readyToSettle);
   renderQueue();
   renderStalls();
 }
@@ -981,22 +1114,19 @@ function renderStalls() {
 function quickSettleOccupied() {
   const occupied = game.stalls.filter(stall => stall.occupant);
   if (!occupied.length) return;
-  const remaining = Math.max(...occupied.map(stall => stall.timeLeft));
-  game.elapsed += remaining;
+  game.elapsed += Math.max(...occupied.map(stall => stall.timeLeft));
   occupied.forEach(stall => rescueOccupant(stall));
 }
-function retreatGame() {
+function finishOrAbandonGame() {
   if (!game) return;
-  const activeQueue = game.queue.length + game.pending.length;
-  if (activeQueue > 0 && !confirm('现在结束会把尚未救援的角色计为失败，确定继续吗？')) return;
-  if (game.timer) clearInterval(game.timer);
-  game.queue.forEach(girl => addOutcome(girl, false, { reason: '提前撤退' }));
-  game.pending.forEach(entry => addOutcome(entry.character, false, { reason: '尚未到场' }));
-  game.stats.fail += activeQueue;
-  game.queue = [];
-  game.pending = [];
-  quickSettleOccupied();
-  finishGame();
+  if (game.queue.length === 0 && game.pending.length === 0) {
+    if (game.timer) clearInterval(game.timer);
+    quickSettleOccupied();
+    finishGame();
+    return;
+  }
+  if (!confirm('确定放弃本局吗？当前进度不会结算，也不会写入游玩纪录。')) return;
+  goHome();
 }
 function calculateGrade(score, successRate, stars) {
   const normalized = score / Math.max(1, game.total);
@@ -1140,14 +1270,16 @@ document.addEventListener('click', event => {
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (action) {
     const actions = {
-      'open-scenes': () => { renderSceneButtons(); showScreen('screen-scene'); },
+      'open-scenes': openScenes,
       'open-help': () => showScreen('screen-help'),
-      'open-gallery': () => { renderGallery(); showScreen('screen-gallery'); },
+      'open-gallery': openGallery,
       'open-settings': () => { syncSettingsUI(); showScreen('screen-settings'); },
       home: goHome,
       'toggle-audio': () => toggleSetting('audio'),
       'toggle-experimental': () => toggleSetting('experimental'),
       'toggle-custom-victims': () => toggleSetting('customVictims'),
+      'toggle-default-big-icons': () => toggleSetting('defaultBigIcons'),
+      'toggle-default-urgency-sort': () => toggleSetting('defaultUrgencySort'),
       'toggle-original-assets': toggleOriginalAssets,
       'reset-characters': resetCharacters,
       'reset-save': resetAllSave,
@@ -1165,7 +1297,7 @@ document.addEventListener('click', event => {
       'toggle-game-big': () => { if (game) { game.bigIconMode = !game.bigIconMode; renderGame(); } },
       'toggle-urgency-sort': () => { if (game) { game.urgencySort = !game.urgencySort; renderGame(); } },
       pause: togglePause,
-      retreat: retreatGame,
+      'finish-or-abandon': finishOrAbandonGame,
       replay
     };
     actions[action]?.();
@@ -1224,3 +1356,4 @@ renderSceneButtons();
 updateHomeRecord();
 setManagedImage(document.querySelector('.mascot img'), characters[0].face);
 setScreenBackground('screen-home', ORIGINAL_BG);
+initializeWebThumbnails();
