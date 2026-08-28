@@ -16,11 +16,12 @@
         <p class="subtitle">在尊严崩溃之前，安排好每一个隔间。</p>
         <div class="mascot"><img alt="随机看板角色"></div>
         <div class="menu-buttons">
-          <button data-action="open-scenes" class="primary">开始游戏</button>
+          <button id="btn-open-scenes" data-action="open-scenes" class="primary">开始游戏</button>
           <button data-action="open-help">玩法与计分说明</button>
           <button data-action="open-gallery">角色图鉴</button>
           <button data-action="open-settings">游戏设置</button>
         </div>
+        <div id="asset-init-status" class="asset-init-status" hidden>正在初始化轻量图片资源……</div>
         <div id="home-record" class="record-strip">尚无救援纪录</div>
         <div id="web-save-reminder" class="web-save-reminder" hidden>💾 如需保存游玩数据，请到“游戏设置”内导出 JSON 存档。</div>
       </div>
@@ -34,9 +35,9 @@
       <div class="help-panel panel">
         <section class="help-lead"><h3>目标：让所有人守住尊严</h3><p>角色会分批到达，忍耐值持续下降。把更危急的人安排进空闲隔间，并根据角色特性选择蹲厕或马桶。游戏没有强制结束时间；总耗时只用于记录，不会让本局自动失败。“紧急度排序”会保留队首，只将其余卡片按剩余忍耐时间从短到长显示，不会改变真实队列。</p></section>
         <div class="help-grid">
-          <section><h3>忍耐与极限</h3><ul><li><b>从容入厕：</b>剩余忍耐 ≥65%</li><li><b>及时救援：</b>剩余忍耐 35%～64.99%</li><li><b>极限抢救：</b>剩余忍耐 15%～34.99%</li><li><b>千钧一发：</b>剩余忍耐不足15%</li></ul><p>忍耐归零即救援失败：扣除90分、当前连救清零。低于35%入厕会计为一次“极限救援”。</p></section>
+          <section><h3>忍耐与极限</h3><ul><li><b>从容入厕：</b>剩余忍耐 ≥65%</li><li><b>及时救援：</b>剩余忍耐 35%～64.99%</li><li><b>极限抢救：</b>剩余忍耐 15%～34.99%</li><li><b>千钧一发：</b>剩余忍耐不足15%</li></ul><p>忍耐归零即救援失败：扣除90分、当前连救清零。低于35%入厕会计为一次“极限救援”。难度只改变初始忍耐上限：轻松×1.4、标准×1、危机×0.6，倒计时流速保持一致。</p></section>
           <section><h3>隔间差异</h3><ul><li><b>蹲厕：</b>基础占用时间减少20%，适合快速周转。</li><li><b>马桶：</b>最终得分乘以1.3，适合追求高分。</li><li><b>角色特性：</b>部分角色会进一步改变占用时间、技能效果或隔间加分。</li></ul><p>自定义场景至少需要1个隔间，蹲厕与马桶合计最多10个。</p></section>
-          <section><h3>基础得分公式</h3><div class="formula">单人得分 = (100 + 紧急度×100 + 当前连救×12 + 特性修正) × 隔间倍率 × 难度倍率</div><p>紧急度 = 1 − 入厕时剩余忍耐比例。越接近极限，基础分越高；马桶倍率为1.3，蹲厕为1。难度倍率：轻松0.85、标准1、危机1.35。</p><p class="example">例：标准难度、剩余忍耐30%、3连救、无特性修正并使用马桶：<br>(100 + 70 + 36) × 1.3 ≈ 268分。</p></section>
+          <section><h3>基础得分公式</h3><div class="formula">单人得分 = (100 + 紧急度×100 + 当前连救×12 + 特性修正) × 隔间倍率 × 难度倍率</div><p>紧急度 = 1 − 入厕时剩余忍耐比例。越接近极限，基础分越高；马桶倍率为1.3，蹲厕为1。难度倍率：轻松0.75、标准1、危机1.5。</p><p class="example">例：标准难度、剩余忍耐30%、3连救、无特性修正并使用马桶：<br>(100 + 70 + 36) × 1.3 ≈ 268分。</p></section>
           <section><h3>特殊得分修正</h3><ul><li>星奈：紧急度≥60%时 +80</li><li>涼風：使用马桶 +45</li><li>詩織：马桶 +90，蹲厕 −40</li><li>凛音：紧急度≥75%时 +140</li><li>亚里沙：使用马桶 +100</li></ul><p>成功救援会让连救数 +1，且每一层连救为该角色增加12点基础分。</p></section>
           <section><h3>技能获得与效果</h3><ul><li><b>开局库存：</b>三种技能均为0。</li><li><b>技能掉落：</b>每当一名角色成功离开厕所，有60%概率随机获得一种技能。</li><li><b>安抚：</b>所有等待者恢复最大忍耐值的10%。</li><li><b>全体催促：</b>所有使用中的隔间，剩余占用时间减少10%。</li><li><b>全场疏导：</b>持续1:00；存在空隔间时，自动把剩余忍耐≤3秒的人送入用时更短的可用厕所。</li></ul><p>部分角色特性会强化对应技能。</p></section>
           <section><h3>结算评级</h3><ul><li><b>S：</b>全员获救、三个挑战全完成，且平均每人得分≥185。</li><li><b>A：</b>成功率≥90%，且平均每人得分≥145。</li><li><b>B：</b>成功率≥72%。</li><li><b>C：</b>成功率≥50%。</li><li><b>D：</b>成功率不足50%。</li></ul><p>场景挑战从上到下为：达成3连拯救、失禁人数不超过1、全员守住尊严。</p></section>
@@ -117,7 +118,7 @@
         <div><span class="top-label">得分</span><strong id="game-score">0</strong></div>
         <div><span class="top-label">救援 / 失败</span><strong><i id="stat-success">0</i> / <i id="stat-fail">0</i></strong></div>
         <div id="speed-controls" class="speed-controls" aria-label="显示时间与现实时间比例"><button data-speed="1" class="small" title="现实1秒等于游戏1秒">1:1</button><button data-speed="2" class="small" title="现实1秒等于游戏2秒">2:1</button><button data-speed="4" class="small active-speed" title="默认：现实1秒等于游戏4秒">普通 4:1</button><button data-speed="8" class="small" title="现实1秒等于游戏8秒">8:1</button><button data-speed="16" class="small" title="现实1秒等于游戏16秒">16:1</button><button id="btn-pause" data-action="pause" class="small">暂停</button></div>
-        <div class="game-view-actions"><button id="btn-game-big" data-action="toggle-game-big" class="small ghost">大图标：关</button><button data-action="retreat" class="small danger">放弃本局</button></div>
+        <div class="game-view-actions"><button id="btn-game-big" data-action="toggle-game-big" class="small ghost">大图标：关</button><button id="btn-end-game" data-action="finish-or-abandon" class="small danger">放弃本局</button></div>
       </header>
       <div class="mission-bar panel"><span id="wave-status">第 1 波即将到达</span><div class="mission-progress"><i id="mission-progress-fill"></i></div><span id="combo-status">连救 ×0</span></div>
       <div class="skill-bar panel">
