@@ -1,1120 +1,156 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>厕所排队模拟器</title>
-<meta name="viewport" content="width=820, user-scalable=no">
-<style>
-    /* 基础 2D 像素风粉色调 UI */
-    :root {
-        --pink-bg: #ffe4e1;
-        --pink-dark: #ffb6c1;
-        --pink-border: #ff69b4;
-        --text-color: #552233;
-        --ui-bg: rgba(255, 255, 255, 0.9);
-    }
-    body {
-        background-color: var(--pink-bg);
-        color: var(--text-color);
-        font-family: 'Courier New', Courier, monospace; 
-        font-weight: bold;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        user-select: none;
-    }
-    #game-container {
-        width: 800px;
-        height: 600px;
-        background-color: #fff;
-        border: 8px solid var(--pink-border);
-        border-radius: 10px;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-    }
-    .screen {
-        width: 100%;
-        height: 100%;
-        position: absolute;
-        top: 0;
-        left: 0;
-        display: none;
-        padding: 20px;
-        box-sizing: border-box;
-        background-image: url('./img/background0.png');
-        background-size: cover;
-        background-position: center;
-        transition: background-image 0.5s ease-in-out;
-    }
-    .active { display: block !important; }
-    
-    h1, h2 { text-align: center; color: #ff1493; text-shadow: 2px 2px 0px #fff; margin-top: 10px;}
-    
-    button {
-        background-color: var(--pink-dark);
-        border: 4px solid var(--pink-border);
-        color: #fff;
-        padding: 10px 20px;
-        font-size: 16px;
-        font-family: inherit;
-        font-weight: bold;
-        cursor: pointer;
-        border-radius: 8px;
-        transition: transform 0.1s;
-        text-shadow: 1px 1px 0px #d1495b;
-    }
-    button:active { transform: scale(0.95); }
-    button:disabled { background-color: #ccc; border-color: #999; cursor: not-allowed; }
-
-    input[type="text"], input[type="number"], textarea {
-        padding: 5px; border: 2px solid var(--pink-border); border-radius: 4px; font-family: inherit; font-weight: bold;
-    }
-    
-    /* 滑块样式 */
-    input[type="range"] {
-        -webkit-appearance: none;
-        width: 150px;
-        height: 10px;
-        background: #eee;
-        border-radius: 5px;
-        border: 1px solid var(--pink-border);
-        outline: none;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: var(--pink-dark);
-        cursor: pointer;
-        border: 2px solid #fff;
-    }
-
-    .mascot { text-align: center; animation: float 2s ease-in-out infinite; margin-bottom: 20px; }
-    .mascot img { width: 200px; height: auto; }
-    @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
-
-    .top-bar { display: flex; justify-content: space-between; background: var(--ui-bg); padding: 10px; border-radius: 8px; border: 2px solid var(--pink-border); margin-bottom: 10px; font-size: 14px; align-items: center;}
-    .game-area { display: flex; height: 460px; gap: 10px; }
-    
-    .queue-area { flex: 1; background: var(--ui-bg); border: 2px solid var(--pink-border); border-radius: 8px; padding: 10px; overflow-y: auto; }
-    .girl-card { display: flex; flex-direction: column; background: #fff; border: 2px solid var(--pink-dark); padding: 8px; margin-bottom: 15px; border-radius: 8px; }
-    .card-top { display: flex; align-items: center; width: 100%; }
-    .card-bottom { 
-        margin-top: 8px; padding: 6px 8px; background: #fff0f5; border-radius: 4px;
-        font-size: 12px; color: #d1495b; font-weight: bold; border-left: 4px solid var(--pink-border);
-        min-height: 14px; display: flex; align-items: center;
-    }
-    
-    .girl-avatar { min-width: 46px; height: 46px; border-radius: 23px; display: flex; justify-content: center; align-items: center; font-size: 26px; margin-right: 10px; border: 2px solid #ccc; overflow: hidden;}
-    .girl-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .girl-info { flex: 1; font-size: 14px; margin-right: 10px;}
-    .bar-bg { width: 100%; height: 10px; background: #eee; border: 1px solid #999; margin-top: 4px; border-radius: 5px; overflow: hidden;}
-    .bar-fill { height: 100%; transition: width 0.1s linear; }
-    .bar-patience { background: #4caf50; }
-    .bar-patience.low { background: #f44336; animation: blink 0.5s infinite; }
-    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-    .stall-area { flex: 1; background: var(--ui-bg); border: 2px solid var(--pink-border); border-radius: 8px; padding: 10px; display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start;}
-    .stall { width: 100px; height: 120px; border: 4px solid #8B4513; background: #DEB887; border-radius: 5px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;}
-    .stall-door { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #CD853F; display: flex; justify-content: center; align-items: center; font-size: 40px; transition: 0.3s; z-index: 5; border: 2px solid #8B4513;}
-    .stall.open .stall-door { transform: scaleX(0.1); transform-origin: left; }
-    .stall-inside { font-size: 50px; z-index: 1; position: absolute;}
-    .stall-inside img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; }
-    
-    .menu-buttons { display: flex; flex-direction: column; gap: 15px; width: 200px; margin: 0 auto; }
-    
-    .gallery-grid { 
-        display: grid; 
-        grid-template-columns: 1fr 1fr; 
-        gap: 10px; 
-        height: 420px; 
-        overflow-y: auto; 
-        background: var(--ui-bg); 
-        padding: 15px; 
-        border: 2px solid var(--pink-border); 
-        border-radius: 8px;
-    }
-    .gallery-item { background: #fff; border: 2px solid var(--pink-dark); padding: 10px; border-radius: 8px; font-size: 12px; display: flex; flex-direction: column; transition: transform 0.1s;}
-    
-    /* 自定义受害者选中样式 */
-    .selected-victim { border-width: 4px !important; border-color: #f44336 !important; background-color: #ffe4e1 !important; transform: scale(0.97); box-shadow: inset 0 0 10px rgba(244,67,54,0.2); }
-    
-    .gallery-header { display: flex; align-items: center; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;}
-    .gallery-header .girl-avatar { margin-right: 10px; min-width: 40px; height: 40px; font-size: 20px;}
-    .gallery-desc { flex: 1; line-height: 1.6; color: #555; }
-    .tag { background: var(--pink-dark); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px;}
-    
-    #custom-form { display: none; background: #fff0f5; padding: 15px; border-radius: 8px; border: 2px dashed var(--pink-border); margin-top: 10px; text-align: left; font-size: 14px;}
-    
-    .settings-panel { background: var(--ui-bg); padding: 30px; border-radius: 10px; border: 4px solid var(--pink-border); width: 60%; margin: 0 auto; text-align: center; font-size: 18px; line-height: 2;}
-    
-    /* 背景选择器样式 */
-    .bg-selector {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: center;
-        margin-top: 15px;
-    }
-    .bg-option {
-        width: 80px;
-        height: 60px;
-        border: 3px solid var(--pink-border);
-        border-radius: 5px;
-        cursor: pointer;
-        transition: transform 0.2s;
-        background-size: cover;
-        background-position: center;
-    }
-    .bg-option:hover { transform: scale(1.05); }
-    .bg-option.selected { border-color: #ff1493; border-width: 4px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ff69b4">
+  <title>厕所排队模拟器：调度危机</title>
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-
-<div id="game-container">
-    <div id="screen-home" class="screen active">
-        <h1>🚽 厕所排队模拟器 💦</h1>
-        <div class="mascot">
-            <img src="./img/girl0.png" alt="看板娘">
-        </div>
+  <main id="game-container" aria-live="polite">
+    <section id="screen-home" class="screen active">
+      <div class="home-card panel">
+        <p class="eyebrow">QUEUE CRISIS</p>
+        <h1>🚽 厕所排队模拟器</h1>
+        <p class="subtitle">在尊严崩溃之前，安排好每一个隔间。</p>
+        <div class="mascot"><img alt="随机看板角色"></div>
         <div class="menu-buttons">
-            <button onclick="showScreen('screen-scene')">开始游戏</button>
-            <button onclick="initGallery(); showScreen('screen-gallery')">角色图鉴</button>
-            <button onclick="showScreen('screen-settings')">游戏设置</button>
+          <button data-action="open-scenes" class="primary">开始游戏</button>
+          <button data-action="open-help">玩法与计分说明</button>
+          <button data-action="open-gallery">角色图鉴</button>
+          <button data-action="open-settings">游戏设置</button>
         </div>
-    </div>
+        <div id="home-record" class="record-strip">尚无救援纪录</div>
+      </div>
+    </section>
 
-    <div id="screen-settings" class="screen">
-        <h2>游戏设置</h2>
-        <div class="settings-panel">
-            <p>
-                🔊 游戏音效: 
-                <button id="btn-audio" onclick="toggleAudio()" style="width: 100px;">开启</button>
-            </p>
-            <p>
-                🔈 音量调节: 
-                <input type="range" id="vol-slider" min="0" max="1" step="0.1" value="0.5" onchange="updateVolume()" style="vertical-align: middle;">
-                <span id="vol-display" style="display:inline-block; width:50px; text-align:left;">50%</span>
-            </p>
-            <hr style="border-top: 2px dashed var(--pink-border); margin: 20px 0;">
-            <p>
-                🧪 自定义少女忍耐力: 
-                <button id="btn-exp" onclick="toggleExp()" style="width: 100px;">关闭</button>
-            </p>
-            <p>
-                👯 自定义受害者少女: 
-                <button id="btn-custom-victims" onclick="toggleCustomVictims()" style="width: 100px;">关闭</button>
-            </p>
-            <button onclick="resetCharacters()" style="background: #f44336; border-color: #d32f2f; margin-top: 10px;">重置所有少女数据</button>
+    <section id="screen-help" class="screen">
+      <div class="screen-heading">
+        <div><p class="eyebrow">HOW TO PLAY</p><h2>玩法与计分说明</h2></div>
+        <button data-action="home" class="ghost">返回主页</button>
+      </div>
+      <div class="help-panel panel">
+        <section class="help-lead"><h3>目标：让所有人守住尊严</h3><p>角色会分批到达，忍耐值持续下降。把更危急的人安排进空闲隔间，并根据角色特性选择蹲厕或马桶。游戏没有强制结束时间；总耗时只用于记录，不会让本局自动失败。“紧急度排序”会保留队首，只将其余卡片按剩余忍耐时间从短到长显示，不会改变真实队列。</p></section>
+        <div class="help-grid">
+          <section><h3>忍耐与极限</h3><ul><li><b>从容入厕：</b>剩余忍耐 ≥65%</li><li><b>及时救援：</b>剩余忍耐 35%～64.99%</li><li><b>极限抢救：</b>剩余忍耐 15%～34.99%</li><li><b>千钧一发：</b>剩余忍耐不足15%</li></ul><p>忍耐归零即救援失败：扣除90分、当前连救清零。低于35%入厕会计为一次“极限救援”。</p></section>
+          <section><h3>隔间差异</h3><ul><li><b>蹲厕：</b>基础占用时间减少20%，适合快速周转。</li><li><b>马桶：</b>最终得分乘以1.3，适合追求高分。</li><li><b>角色特性：</b>部分角色会进一步改变占用时间、技能效果或隔间加分。</li></ul><p>自定义场景至少需要1个隔间，蹲厕与马桶合计最多10个。</p></section>
+          <section><h3>基础得分公式</h3><div class="formula">单人得分 = (100 + 紧急度×100 + 当前连救×12 + 特性修正) × 隔间倍率 × 难度倍率</div><p>紧急度 = 1 − 入厕时剩余忍耐比例。越接近极限，基础分越高；马桶倍率为1.3，蹲厕为1。难度倍率：轻松0.85、标准1、危机1.35。</p><p class="example">例：标准难度、剩余忍耐30%、3连救、无特性修正并使用马桶：<br>(100 + 70 + 36) × 1.3 ≈ 268分。</p></section>
+          <section><h3>特殊得分修正</h3><ul><li>星奈：紧急度≥60%时 +80</li><li>涼風：使用马桶 +45</li><li>詩織：马桶 +90，蹲厕 −40</li><li>凛音：紧急度≥75%时 +140</li><li>亚里沙：使用马桶 +100</li></ul><p>成功救援会让连救数 +1，且每一层连救为该角色增加12点基础分。</p></section>
+          <section><h3>技能获得与效果</h3><ul><li><b>开局库存：</b>三种技能均为0。</li><li><b>技能掉落：</b>每当一名角色成功离开厕所，有60%概率随机获得一种技能。</li><li><b>安抚：</b>所有等待者恢复最大忍耐值的10%。</li><li><b>全体催促：</b>所有使用中的隔间，剩余占用时间减少10%。</li><li><b>全场疏导：</b>持续1:00；存在空隔间时，自动把剩余忍耐≤3秒的人送入用时更短的可用厕所。</li></ul><p>部分角色特性会强化对应技能。</p></section>
+          <section><h3>结算评级</h3><ul><li><b>S：</b>全员获救、三个挑战全完成，且平均每人得分≥185。</li><li><b>A：</b>成功率≥90%，且平均每人得分≥145。</li><li><b>B：</b>成功率≥72%。</li><li><b>C：</b>成功率≥50%。</li><li><b>D：</b>成功率不足50%。</li></ul><p>场景挑战从上到下为：达成3连拯救、失禁人数不超过1、全员守住尊严。</p></section>
         </div>
-        <div style="text-align: center; margin-top: 30px;"><button onclick="goHome()">返回主页</button></div>
-    </div>
+      </div>
+    </section>
 
-    <div id="screen-scene" class="screen">
-        <h2>选择事故现场</h2>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;" id="scene-buttons"></div>
-        <div style="text-align: center; margin-top: 10px;">
-            <button onclick="toggleCustomForm()" style="background: #8B4513; border-color: #5C3A21; font-size: 14px;">+ 自定义场景</button>
+    <section id="screen-settings" class="screen">
+      <div class="screen-heading">
+        <div><p class="eyebrow">OPTIONS</p><h2>游戏设置</h2></div>
+        <button data-action="home" class="ghost">返回主页</button>
+      </div>
+      <div class="settings-panel panel">
+        <div class="setting-row"><span>🔊 游戏音效<small>高倍速不会堆叠播放</small></span><button id="btn-audio" data-action="toggle-audio" class="toggle">开启</button></div>
+        <label class="setting-row"><span>🔈 音量<small id="vol-display">50%</small></span><input type="range" id="vol-slider" min="0" max="1" step="0.05" value="0.5"></label>
+        <div class="setting-row"><span>🧪 编辑角色参数<small>在图鉴里修改忍耐与占用时间</small></span><button id="btn-exp" data-action="toggle-experimental" class="toggle">关闭</button></div>
+        <div class="setting-row"><span>👯 自选出场角色<small>开局前从图鉴中选择</small></span><button id="btn-custom-victims" data-action="toggle-custom-victims" class="toggle">关闭</button></div>
+        <div id="web-original-setting" class="setting-row" hidden><span>🖼️ 加载并使用原图<small id="original-assets-status">网页版默认使用轻量缩略图；开启后下载高清原图并优先显示。</small></span><button id="btn-original-assets" data-action="toggle-original-assets" class="toggle off">关闭</button></div>
+        <label class="setting-row"><span>🎯 默认难度</span><select id="difficulty-select"><option value="casual">轻松</option><option value="normal" selected>标准</option><option value="crisis">危机</option></select></label>
+        <div class="save-file-box">
+          <div><strong>📁 独立 JSON 存档</strong><small>可跨设备、浏览器和网站地址携带；浏览器仍会自动缓存。</small></div>
+          <div class="settings-actions"><button data-action="export-save" class="primary">导出 JSON</button><button data-action="import-save" class="ghost">导入 JSON</button><input id="save-file-input" type="file" accept="application/json,.json" hidden></div>
         </div>
-        
-        <div id="custom-form" style="width: 80%; margin: 10px auto;">
-            <label>场景标题: <input type="text" id="cust-title" value="此处填场景标题" style="width: 150px;"></label>
-            <label style="margin-left: 10px;">隔间数量: <input type="number" id="cust-stalls" value="3" min="1" max="10" style="width: 50px;"></label><br><br>
-            <label>事故简介: <textarea id="cust-desc" style="width: 100%; height: 40px;">这里写事故原因…</textarea></label><br>
-            
-            <div style="margin-top: 15px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #d1495b;">选择背景图:</label>
-                <div class="bg-selector" id="bg-selector"></div>
-            </div>
-            
-            <div style="text-align: center; margin-top: 15px;">
-                <button onclick="applyCustomScene()">确认使用该场景</button>
-            </div>
+        <div class="settings-actions">
+          <button data-action="reset-characters" class="danger">重置角色参数</button>
+          <button data-action="reset-save" class="danger ghost-danger">清除全部存档</button>
         </div>
+      </div>
+    </section>
 
-        <div id="scene-detail-box" style="text-align: center; margin-top: 10px; background: var(--ui-bg); padding: 15px; border-radius: 10px;">
-            <h3 id="scene-desc-title" style="color: #d1495b; margin-top: 0;">请选择场景</h3>
-            <p id="scene-desc-text" style="height: 45px; font-size: 13px; line-height: 1.5; margin: 5px 0;">...</p>
-            <div id="victim-count-container">
-                <label>受害少女数量: <input type="number" id="girl-count" min="1" max="20" value="6" style="width: 50px; font-size: 16px;"></label>
-            </div>
-            <br><br>
-            <button id="btn-start" disabled onclick="handleStartBtn()">开始排队！</button>
-            <button onclick="goHome()" style="background: #ccc; border-color: #999;">返回</button>
-            
-            <button id="btn-delete-scene" onclick="deleteCurrentScene()" style="display: none; background: #f44336; border-color: #d32f2f; margin-left: 10px;">删除场景</button>
+    <section id="screen-scene" class="screen">
+      <div class="screen-heading">
+        <div><p class="eyebrow">CHOOSE A SCENE</p><h2>选择事故现场</h2></div>
+        <button data-action="home" class="ghost">返回主页</button>
+      </div>
+      <div id="scene-buttons" class="scene-grid"></div>
+      <button data-action="toggle-custom-form" class="wide secondary">＋ 自定义场景</button>
+      <form id="custom-form" class="panel form-panel" hidden>
+        <div class="form-grid">
+          <label>场景标题<input type="text" id="cust-title" maxlength="18" placeholder="例如：暴雨音乐节"></label>
+          <div class="toilet-count-fields"><label>蹲厕数量<input type="number" id="cust-squat" value="2" min="0" max="10"></label><label>马桶数量<input type="number" id="cust-seated" value="1" min="0" max="10"></label></div>
         </div>
-    </div>
-
-    <div id="screen-select-victims" class="screen">
-        <h2>选择受害少女</h2>
-        <div style="text-align:center; font-size: 14px; margin-bottom: 10px; background: var(--ui-bg); padding: 5px; border-radius: 8px; border: 2px dashed var(--pink-border);">
-            请点击图鉴选择受害者，当前已选: <span id="selected-count" style="color:#d1495b; font-weight:bold; font-size: 18px;">0</span> 人
+        <p class="form-note">蹲厕与马桶合计至少1个、最多10个。</p>
+        <label>事故简介<textarea id="cust-desc" maxlength="100" placeholder="这里发生了什么？"></textarea></label>
+        <fieldset><legend>选择背景图</legend><div id="bg-selector" class="bg-selector"></div></fieldset>
+        <div class="form-actions"><button type="submit" class="primary">保存并使用</button><button type="button" data-action="cancel-custom" class="ghost">取消</button></div>
+      </form>
+      <div id="scene-detail-box" class="panel scene-detail">
+        <div><h3 id="scene-desc-title">请选择场景</h3><p id="scene-desc-text">每个场景都有独特的客流与挑战。</p></div>
+        <div class="scene-config">
+          <label id="victim-count-container">出场人数<input type="number" id="girl-count" min="3" max="20" value="8"></label>
+          <label>难度<select id="scene-difficulty"><option value="casual">轻松</option><option value="normal" selected>标准</option><option value="crisis">危机</option></select></label>
         </div>
-        <div class="gallery-grid" id="select-container" style="height: 380px;"></div>
-        <div style="text-align: center; margin-top: 15px;">
-            <button id="btn-confirm-victims" onclick="startGame()" disabled style="background:#4caf50; border-color:#388e3c;">确定开始</button>
-            <button onclick="showScreen('screen-scene')" style="background: #ccc; border-color: #999;">返回重选</button>
+        <div id="scene-challenges" class="challenge-preview"></div>
+        <div class="form-actions">
+          <button id="btn-start" data-action="start-flow" disabled class="primary">开始游戏</button>
+          <button id="btn-delete-scene" data-action="delete-scene" hidden class="danger">删除场景</button>
         </div>
-    </div>
+      </div>
+    </section>
 
-    <div id="screen-gallery" class="screen">
-        <h2>少女的秘密档案</h2>
-        <div class="gallery-grid" id="gallery-container"></div>
-        <br>
-        <div style="text-align: center;"><button onclick="goHome()">返回主页</button></div>
-    </div>
+    <section id="screen-select-victims" class="screen">
+      <div class="screen-heading"><div><p class="eyebrow">SELECT TEAM</p><h2>选择出场角色</h2></div><button data-action="back-scenes" class="ghost">返回场景</button></div>
+      <div class="selection-toolbar panel"><span>已选 <strong id="selected-count">0</strong> 人</span><div><button data-action="select-random" class="small">随机 8 人</button><button data-action="clear-selection" class="small ghost">清空</button></div></div>
+      <div id="select-container" class="gallery-grid select-grid"></div>
+      <button id="btn-confirm-victims" data-action="start-game" disabled class="primary wide">确定开始游戏</button>
+    </section>
 
-    <div id="screen-game" class="screen">
-        <div class="top-bar">
-            <div id="game-time">时间: 00:00</div>
-            <div id="speed-controls">
-                速度: 
-                <button id="btn-spd-1" onclick="setSpeed(1)" style="padding: 2px 8px; border-color: #fff;">1x</button>
-                <button id="btn-spd-3" onclick="setSpeed(3)" style="padding: 2px 8px;">3x</button>
-                <button id="btn-spd-10" onclick="setSpeed(10)" style="padding: 2px 8px;">10x</button>
-                <button id="btn-spd-30" onclick="setSpeed(30)" style="padding: 2px 8px;">30x</button>
-            </div>
-            <div>
-                解脱: <span id="stat-success" style="color:green; font-weight:bold;">0</span> | 
-                社死: <span id="stat-fail" style="color:red; font-weight:bold;">0</span>
-            </div>
-            <button id="btn-retreat" onclick="forceRetreat()" style="padding: 2px 8px; background: #d1495b;">返回标题</button>
+    <section id="screen-gallery" class="screen">
+      <div class="screen-heading"><div><p class="eyebrow">CHARACTER FILES</p><h2>角色档案</h2></div><div class="heading-actions"><button id="btn-gallery-big" data-action="toggle-gallery-big" class="ghost">大图标：关</button><button data-action="home" class="ghost">返回主页</button></div></div>
+      <div class="trait-legend panel"><span>每名角色都有符合人设的专属特性；部分效果会改变技能、隔间选择或整支队伍。</span><div id="gallery-state-toolbar" class="portrait-state-tabs" role="group" aria-label="全体头像状态"><button type="button" class="small ghost active" data-gallery-state="standard">标准</button><button type="button" class="small ghost" data-gallery-state="normal">普通</button><button type="button" class="small ghost" data-gallery-state="anxious">着急</button><button type="button" class="small ghost" data-gallery-state="extreme">极限</button><button type="button" class="small ghost" data-gallery-state="release">释放</button></div></div>
+      <div id="gallery-container" class="gallery-grid"></div>
+    </section>
+
+    <section id="screen-game" class="screen game-screen">
+      <header class="top-bar panel">
+        <div><span class="top-label">时间</span><strong id="game-time">00:00</strong></div>
+        <div><span class="top-label">得分</span><strong id="game-score">0</strong></div>
+        <div><span class="top-label">救援 / 失败</span><strong><i id="stat-success">0</i> / <i id="stat-fail">0</i></strong></div>
+        <div id="speed-controls" class="speed-controls" aria-label="显示时间与现实时间比例"><button data-speed="1" class="small" title="现实1秒等于游戏1秒">1:1</button><button data-speed="2" class="small" title="现实1秒等于游戏2秒">2:1</button><button data-speed="4" class="small active-speed" title="默认：现实1秒等于游戏4秒">普通 4:1</button><button data-speed="8" class="small" title="现实1秒等于游戏8秒">8:1</button><button data-speed="16" class="small" title="现实1秒等于游戏16秒">16:1</button><button id="btn-pause" data-action="pause" class="small">暂停</button></div>
+        <div class="game-view-actions"><button id="btn-game-big" data-action="toggle-game-big" class="small ghost">大图标：关</button><button data-action="retreat" class="small danger">结束本局</button></div>
+      </header>
+      <div class="mission-bar panel"><span id="wave-status">第 1 波即将到达</span><div class="mission-progress"><i id="mission-progress-fill"></i></div><span id="combo-status">连救 ×0</span></div>
+      <div class="game-area">
+        <section class="queue-area panel">
+          <div class="area-title"><h3>等待队列</h3><div class="queue-title-actions"><span id="queue-count">0 人等待</span><button id="btn-urgency-sort" data-action="toggle-urgency-sort" class="small ghost">紧急度排序：关</button></div></div>
+          <div id="arrival-feed" class="arrival-feed"></div><div id="queue-container"></div><div id="queue-empty" class="empty-state">下一波角色还在赶来……</div>
+        </section>
+        <section class="stall-area panel"><div class="area-title"><h3>隔间状态</h3><span id="stall-hint">蹲厕省时，马桶加分</span></div><div id="stall-container" class="stall-grid"></div></section>
+      </div>
+      <div class="skill-bar panel">
+        <button data-skill="comfort" class="skill-button"><span>💗 全场安抚</span><small>全体等待者恢复10%</small><b id="skill-comfort-count">0</b></button>
+        <button data-skill="rush" class="skill-button"><span>📣 全体催促</span><small>所有隔间剩余时间 −10%</small><b id="skill-rush-count">0</b></button>
+        <button data-skill="focus" class="skill-button"><span>📋 全场疏导</span><small>持续1:00，自动救援≤3秒者</small><b id="skill-focus-count">0</b></button>
+      </div>
+      <div id="toast" class="toast" role="status"></div>
+      <div id="pause-overlay" class="pause-overlay" hidden><div><h2>游戏已暂停</h2><button data-action="pause" class="primary">继续调度</button></div></div>
+    </section>
+
+    <section id="screen-result" class="screen">
+      <div class="result-card panel">
+        <p class="eyebrow">INCIDENT REPORT</p><div id="result-grade" class="result-grade">A</div><h2 id="res-title">事后报告</h2><p id="res-eval" class="result-eval"></p>
+        <div class="result-stats">
+          <div><span>最终得分</span><strong id="res-score">0</strong></div><div><span>总耗时</span><strong id="res-time">00:00</strong></div><div><span>成功救援</span><strong id="res-success">0</strong></div><div><span>不幸失败</span><strong id="res-fail">0</strong></div><div><span>平均等待</span><strong id="res-average">00:00</strong></div><div><span>最高连救</span><strong id="res-combo">0</strong></div>
         </div>
-        <div class="game-area">
-            <div class="queue-area" id="queue-container"></div>
-            <div class="stall-area" id="stall-container"></div>
-        </div>
-    </div>
-
-    <div id="screen-result" class="screen">
-        <h2>事后报告</h2>
-        <div style="background: var(--ui-bg); padding: 30px; text-align: center; border: 4px dashed var(--pink-border); font-size: 18px; line-height: 2;">
-            <p>总耗时: <span id="res-time"></span></p>
-            <p style="color: green;">成功守护尊严: <span id="res-success"></span> 人</p>
-            <p style="color: red;">不幸社会性死亡: <span id="res-fail"></span> 人</p>
-            <h3 id="res-eval" style="margin-top: 20px; font-weight: bold; line-height: 1.4;"></h3>
-        </div>
-        <div style="text-align: center; margin-top: 20px;">
-            <button onclick="goHome()">返回主界面</button>
-        </div>
-    </div>
-</div>
-
-<script>
-/* ================= 全局设置与音量控制 ================= */
-let sysSettings = { audio: true, volume: 0.5, experimental: false, customVictims: false };
-
-function toggleAudio() {
-    sysSettings.audio = !sysSettings.audio;
-    document.getElementById('btn-audio').innerText = sysSettings.audio ? '开启' : '关闭';
-    document.getElementById('btn-audio').style.backgroundColor = sysSettings.audio ? 'var(--pink-dark)' : '#ccc';
-}
-
-function updateVolume() {
-    sysSettings.volume = parseFloat(document.getElementById('vol-slider').value);
-    document.getElementById('vol-display').innerText = Math.round(sysSettings.volume * 100) + '%';
-}
-
-function toggleExp() {
-    sysSettings.experimental = !sysSettings.experimental;
-    document.getElementById('btn-exp').innerText = sysSettings.experimental ? '开启' : '关闭';
-    document.getElementById('btn-exp').style.backgroundColor = sysSettings.experimental ? '#f44336' : '#ccc';
-}
-
-function toggleCustomVictims() {
-    sysSettings.customVictims = !sysSettings.customVictims;
-    document.getElementById('btn-custom-victims').innerText = sysSettings.customVictims ? '开启' : '关闭';
-    document.getElementById('btn-custom-victims').style.backgroundColor = sysSettings.customVictims ? '#f44336' : '#ccc';
-    // 修复：切换开关后，立刻刷新当前场景的按钮和UI状态
-    if (currentScene) {
-        selectScene(currentScene);
-    }
-}
-
-/* ================= 本地音频播放引擎 ================= */
-const AUDIO_FILES = {
-    belly: Array.from({length: 4}, (_, i) => `./audio/belly_rumbling${i+1}.ogg`),
-    fart: Array.from({length: 4}, (_, i) => `./audio/fart${i+1}.ogg`),
-    diarrhea: Array.from({length: 15}, (_, i) => `./audio/Diarrhea${i+1}.ogg`), // 统一更新为15个Diarrhea
-    flush: Array.from({length: 2}, (_, i) => `./audio/flush_the_toilet${i+1}.ogg`),
-    incontinence: Array.from({length: 11}, (_, i) => `./audio/incontinence${i+1}.ogg`)
-};
-
-function playLocalSound(type) {
-    if (!sysSettings.audio) return;
-    let files = AUDIO_FILES[type];
-    if (!files) return;
-    let src = files[Math.floor(Math.random() * files.length)];
-    let audio = new Audio(src);
-    
-    // 音量动态调整
-    let volMultiplier = 1.0;
-    if (type === 'belly') volMultiplier = 0.2; // 肠鸣声 20%
-    else if (type === 'fart') volMultiplier = 0.5; // 放屁声 50%
-    
-    audio.volume = sysSettings.volume * volMultiplier;
-    
-    // 为了防止高倍速下浏览器音频堆叠卡死，限制最高播放倍速并适当加速
-    audio.playbackRate = Math.min(gameSpeed, 4.0);
-    
-    // 使用 catch 防止浏览器自动播放策略报错
-    audio.play().catch(e => { console.warn("音频播放被拦截:", e); });
-}
-
-/* ================= 核心跳转与刷新控制 ================= */
-function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-}
-
-// 返回主页并随机刷新看板娘和背景
-function goHome() {
-    // 随机抽取一个少女做看板娘
-    const randomGirl = pixelGirls[Math.floor(Math.random() * pixelGirls.length)];
-    document.querySelector('.mascot img').src = randomGirl;
-
-    // 随机抽取一个存在的背景
-    const allBgs = [ORIGINAL_BG, ...SCENES.filter(s => s.bg).map(s => s.bg)];
-    const randomBg = allBgs[Math.floor(Math.random() * allBgs.length)];
-    document.getElementById('screen-home').style.backgroundImage = `url(${randomBg})`;
-
-    showScreen('screen-home');
-}
-
-/* ================= 核心数据配置 ================= */
-const SCENES = [
-    { id: 'park', name: "街心公园", stalls: 2, desc: "【事故原因】社团野餐时吃到了没烤熟的劣质烤肉。大家捂着肚子狂奔向公园公厕，但这里只有可怜的2个隔间！", bg: "./img/background1.png" },
-    { id: 'school', name: "私立学园", stalls: 3, desc: "【事故原因】家政课上某人误把泻药当成了糖粉加进了布丁里。课间十分钟的3格女厕所化为了修罗场...", bg: "./img/background2.png" },
-    { id: 'comic', name: "夏日漫展", stalls: 4, desc: "【事故原因】场馆冷气太足，加上喝了太多加冰奶茶。COSER们面临着人生最大的危机，4个隔间也无济于事！", bg: "./img/background3.png" },
-    { id: 'dorm', name: "女子宿舍", stalls: 1, desc: "【事故原因】昨晚宿舍聚餐狂吃变态辣火锅的后遗症在清晨集体爆发。最恐怖的是，这一层竟然只有1个独立卫浴！", bg: "./img/background4.png" },
-    { id: 'mall', name: "新光百货", stalls: 5, desc: "【事故原因】网红甜品店的生冷海鲜冰沙引发了群体性肠胃抗议。虽然有5个宽敞隔间，但依然供不应求。", bg: "./img/background5.png" }
-];
-
-// 原始背景图
-const ORIGINAL_BG = './img/background0.png';
-
-// 一般忍耐状态文案
-const QUOTES_NORMAL = [
-    "肚子咕噜噜叫了...好痛...", 
-    "前面的同学，拜托快一点点！", 
-    "（夹紧双腿）稍微有点不妙...", 
-    "只、只是稍微有点肚子痛而已！才没有很急！", 
-    "里面的人还要多久啊...",
-    "呼...深呼吸，我可以忍住的。",
-    "肚子怎么一直在叫啊，好丢人...",
-    "千万别在这个时候闹肚子啊...",
-    "快点出来吧，拜托了...",
-    "稍微蹲下来一点会不会好受些..."
-];
-
-// 极限忍耐状态文案（红血）
-const QUOTES_EXTREME = [
-    "呜呜，腿已经在发抖了...", 
-    "不行了，感觉随时会决堤...", 
-    "要是被人发现就彻底社死了！", 
-    "括约肌，拜托了，再坚持一分钟！", 
-    "里面的人是在孵蛋吗？！快出来啊！", 
-    "别看我...我现在表情一定很奇怪...",
-    "要漏了要漏了！真的要漏了！", 
-    "如果有下辈子，我绝对不吃那个了...",
-    "肚子好痛！痛死了！要憋不住了啊！",
-    "谁来救救我...马上就要出来了...",
-    "稍微动一下都要漏出来了...",
-    "求求你快点！我要不行了！",
-    "神啊，请赐给我一个空隔间吧！",
-    "防线...防线要崩溃了！",
-    "呜呜呜...感觉已经有一点点..."
-];
-
-const baseNames = ["星奈", "紬", "柚葉", "琴音", "涼風", "奈緒", "真白", "結月", "千夏", "莉子", "詩織", "瑞希", "日鞠", "凛音", "沙耶", "千寻", "美波", "芽衣", "亚里沙", "初雪"];
-
-const pixelGirls = [
-    "./img/girl0.png", "./img/girl1.png", "./img/girl2.png", "./img/girl3.png", "./img/girl4.png",
-    "./img/girl5.png", "./img/girl6.png", "./img/girl7.png", "./img/girl8.png", "./img/girl9.png",
-    "./img/girl10.png", "./img/girl11.png", "./img/girl12.png", "./img/girl13.png", "./img/girl14.png",
-    "./img/girl15.png", "./img/girl16.png", "./img/girl17.png", "./img/girl18.png", "./img/girl19.png"
-];
-
-const customPatience = [
-    18, 20, 11, 30, 9,  
-    14,  7, 10, 13, 15,  
-    19, 27, 11, 33, 10,  
-    17,  8, 20, 30, 12   
-];
-
-const customToiletTime = [
-    6,  7,  3,  8,  4,   
-    6,  3,  5,  4,  5,   
-    7,  10, 4,  6,  4,   
-    5,  3,  6,  8,  5    
-];
-
-const customIdentities = [
-    "恋爱脑的辣妹", "认真的风纪委员", "活泼的转学生", "咖啡厅头牌女仆", "知名Coser",       
-    "慵懒的家里蹲", "暴躁的不良少女", "神秘的文学少女", "元气田径部员", "胆小的图书委员",   
-    "怕冷的千金大小姐", "传统的神社巫女", "迷糊的魔法使", "冰山御姐教师", "迷路的异界精灵", 
-    "天才少女程序员", "笨手笨脚的实习女仆", "热血的棒球队长", "出逃的异国公主", "暴走族大姐头"    
-];
-
-const customTraits = [
-    "昨天和男友约会吃了变态辣火锅，现在正因为不想破坏形象而死死憋着，眼泪都快出来了。",
-    "绝不允许自己在学校发生这种“不雅”的意外，哪怕双腿发抖也要死守校花兼风纪委员的威严。",
-    "刚来新学校就因为水土不服遭遇了腹泻危机，新陈代谢超快的她急得在原地不停跺脚。",
-    "绝对不能让主人看到自己捂着肚子狼狈的样子！正在用惊人的职业素养和括约肌苦苦支撑。",
-    "漫展上吃了粉丝送的不明零食。身上的COS服装备太繁琐，解开要很久，急得满头大汗。",
-    
-    "难得出一趟门就喝了变质的冰牛奶，此时脆弱的肠胃正如洗衣机般翻滚，感觉随时会决堤。",
-    "“可恶，是谁在我的炒面面包里加了特级泻药！”虽然嘴硬脾气暴，但生理防线已经快坚持不住了。",
-    "平时总是一副云淡风轻的样子，现在却紧闭双眼、满脸通红地对抗着大自然的呼唤。",
-    "肠道蠕动速度和跑步速度一样快！稍微吃坏肚子就会立刻有反应，试图用深蹲来转移注意力。",
-    "稍微紧张就会肚子痛的体质，现在已经被长长的排队阵势吓得眼泪汪汪，夹紧双腿微微发抖。",
-    
-    "穿得太多导致出汗，加上贪吃冷饮导致胃部受凉，冰火两重天之下急需一个温暖的隔间释放自我。",
-    "不小心吃了过期的供品。因为和服一层又一层穿脱极其麻烦，她知道自己需要更多的时间去准备...",
-    "试喝了自己调配的“神秘魔药”导致肠胃暴走，急需马桶来解除这可怕的诅咒。",
-    "平时总是冷着脸的御姐教师，现在却因为吃了学生送的可疑饼干而面临前所未有的生理危机，高傲的她绝不能在学生面前出丑。",
-    "完全不适应人类世界的食物（特别是麻辣烫），对人类社会公厕的排队规则感到绝望。",
-    
-    "年仅14岁的天才程序员，连续三天熬夜编程后吃了过期的泡面，现在小小的身体正承受着巨大的痛苦，急得直掉眼泪。",
-    "因为偷吃了厨房里过期的奶油蛋糕而引发了惨案，胆子很小的她现在急得快要哭出来了。",
-    "赛前为了降温一口气喝了太多冰镇功能饮料。虽然毅力惊人，但括约肌的防线随时可能崩溃。",
-    "第一次吃平民路边摊的烤串就遭遇了滑铁卢，从小到大都没受过排队上厕所的委屈。",
-    "在高速上狂飙时肚子突然剧痛，好不容易找到公厕却发现已经爆满，正处于暴走边缘！"
-];
-
-const CHARACTERS = [];
-for (let i = 0; i < 20; i++) {
-    let pMax = customPatience[i] || 20; 
-    let tMax = customToiletTime[i] || 5;  
-    let iden = customIdentities[i] || "神秘少女"; 
-    let trait = customTraits[i] || "正面临着无法言说的急迫危机...";
-
-    CHARACTERS.push({
-        id: i,
-        name: baseNames[i],
-        color: `hsl(${i * 18}, 70%, 70%)`, 
-        face: pixelGirls[i], 
-        patienceMax: pMax * 60, 
-        toiletTimeMax: tMax * 60, 
-        defaultPMax: pMax * 60, 
-        defaultTMax: tMax * 60, 
-        identity: iden,  
-        bio: trait       
-    });
-}
-
-/* ================= 游戏状态 ================= */
-let currentScene = null;
-let gameLoop = null;
-let gameTick = 0; 
-let gameSpeed = 1;
-const baseInterval = 1000; 
-let stats = { success: 0, fail: 0, total: 0, neglectedFails: 0 };
-let queue = [];
-let stalls = []; 
-let selectedBg = ORIGINAL_BG; 
-
-let selectedVictims = []; // 用于存放自定义选中的受害者ID
-
-function formatTime(seconds) {
-    let m = Math.floor(seconds / 60);
-    let s = Math.floor(seconds % 60);
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-}
-
-/* ================= 界面初始化 ================= */
-const sceneDiv = document.getElementById('scene-buttons');
-function renderSceneButtons() {
-    sceneDiv.innerHTML = '';
-    SCENES.forEach(scene => {
-        let btn = document.createElement('button');
-        btn.innerText = scene.name;
-        btn.onclick = () => selectScene(scene);
-        sceneDiv.appendChild(btn);
-    });
-}
-renderSceneButtons();
-
-function selectScene(scene) {
-    currentScene = scene;
-    document.getElementById('scene-desc-title').innerText = scene.name;
-    document.getElementById('scene-desc-text').innerText = scene.desc;
-    document.getElementById('btn-start').disabled = false;
-    document.getElementById('custom-form').style.display = 'none';
-    document.getElementById('scene-detail-box').style.display = 'block'; 
-    
-    // 动态设置受害者数量 (隔间数 x 4，最大20)
-    let defaultCount = Math.min(scene.stalls * 4, 20);
-    document.getElementById('girl-count').value = defaultCount;
-    
-    // 控制删除按钮的显示/隐藏
-    let deleteBtn = document.getElementById('btn-delete-scene');
-    if (scene.isCustom) {
-        deleteBtn.style.display = 'inline-block';
-    } else {
-        deleteBtn.style.display = 'none';
-    }
-
-    // 更新场景界面背景图
-    const sceneScreen = document.getElementById('screen-scene');
-    if (scene.bg) {
-        sceneScreen.style.backgroundImage = `url(${scene.bg})`;
-    } else {
-        sceneScreen.style.backgroundImage = `url(${ORIGINAL_BG})`;
-    }
-
-    // 根据自定义受害者选项处理界面按钮
-    if (sysSettings.customVictims) {
-        document.getElementById('victim-count-container').style.display = 'none';
-        document.getElementById('btn-start').innerText = '选择受害少女';
-    } else {
-        document.getElementById('victim-count-container').style.display = 'block';
-        document.getElementById('btn-start').innerText = '开始排队！';
-    }
-}
-
-function handleStartBtn() {
-    if (sysSettings.customVictims) {
-        openVictimSelection();
-    } else {
-        startGame();
-    }
-}
-
-/* --- 自定义受害者选择逻辑 --- */
-function openVictimSelection() {
-    selectedVictims = [];
-    renderVictimSelection();
-    showScreen('screen-select-victims');
-}
-
-function renderVictimSelection() {
-    const cont = document.getElementById('select-container');
-    cont.innerHTML = '';
-    CHARACTERS.forEach(c => {
-        let isSelected = selectedVictims.includes(c.id);
-        let cssClass = isSelected ? 'gallery-item selected-victim' : 'gallery-item';
-        
-        cont.innerHTML += `
-            <div class="${cssClass}" style="border-color:${c.color}; cursor: pointer; display:flex; flex-direction:column; justify-content:space-between;" onclick="toggleVictimSelection(${c.id})">
-                <div class="gallery-header" style="border-bottom: 1px dashed #ccc; margin-bottom: 5px; padding-bottom: 5px;">
-                    <div class="girl-avatar" style="background:${c.color}; width:30px; height:30px; min-width:30px; font-size:16px;">
-                        <img src="${c.face}" alt="${c.name}">
-                    </div>
-                    <div><h4 style="margin:0; font-size:13px; color:#ff1493;">${c.name} <span class="tag" style="font-size:9px;">${c.identity}</span></h4></div>
-                </div>
-                <div style="font-size:10px; color:#555; line-height:1.3; flex:1; overflow:hidden; text-overflow:ellipsis;">${c.bio}</div>
-                <div style="font-size:11px; margin-top:5px; background:#fff0f5; padding:3px; border-radius:4px; font-weight:bold; color:#d1495b; text-align:center;">
-                    ⏱️忍耐:${c.patienceMax/60}分 | 🚽占用:${c.toiletTimeMax/60}分
-                </div>
-            </div>
-        `;
-    });
-    document.getElementById('selected-count').innerText = selectedVictims.length;
-    document.getElementById('btn-confirm-victims').disabled = selectedVictims.length === 0;
-}
-
-function toggleVictimSelection(id) {
-    let idx = selectedVictims.indexOf(id);
-    if (idx > -1) {
-        selectedVictims.splice(idx, 1);
-    } else {
-        selectedVictims.push(id);
-    }
-    renderVictimSelection();
-}
-/* -------------------------- */
-
-function toggleCustomForm() {
-    let form = document.getElementById('custom-form');
-    let detailBox = document.getElementById('scene-detail-box');
-    
-    if (form.style.display === 'block') {
-        form.style.display = 'none';
-        detailBox.style.display = 'block';
-    } else {
-        form.style.display = 'block';
-        detailBox.style.display = 'none';
-        
-        // 初始化背景选择器
-        initBgSelector();
-        document.getElementById('screen-scene').style.backgroundImage = `url(${ORIGINAL_BG})`;
-    }
-}
-
-// 初始化背景选择器
-function initBgSelector() {
-    const selector = document.getElementById('bg-selector');
-    selector.innerHTML = '';
-    
-    let originalOption = document.createElement('div');
-    originalOption.className = 'bg-option selected'; 
-    originalOption.style.backgroundImage = `url(${ORIGINAL_BG})`; 
-    originalOption.title = '原始背景';
-    originalOption.onclick = () => selectBgOption(ORIGINAL_BG, originalOption);
-    selector.appendChild(originalOption);
-    
-    SCENES.forEach(scene => {
-        let option = document.createElement('div');
-        option.className = 'bg-option';
-        option.style.backgroundImage = `url(${scene.bg})`;
-        option.title = scene.name;
-        option.onclick = () => selectBgOption(scene.bg, option);
-        selector.appendChild(option);
-    });
-    selectedBg = ORIGINAL_BG;
-}
-
-function selectBgOption(bgUrl, element) {
-    selectedBg = bgUrl;
-    document.querySelectorAll('.bg-option').forEach(el => el.classList.remove('selected'));
-    element.classList.add('selected');
-    document.getElementById('screen-scene').style.backgroundImage = `url(${bgUrl})`;
-}
-
-function applyCustomScene() {
-    let customScene = {
-        id: 'custom_' + Date.now(),
-        name: document.getElementById('cust-title').value || "未知区域",
-        stalls: parseInt(document.getElementById('cust-stalls').value) || 1,
-        desc: "【自定义事故】" + (document.getElementById('cust-desc').value || "没有任何说明的突发事件..."),
-        isCustom: true,
-        bg: selectedBg 
-    };
-    
-    SCENES.push(customScene);
-    renderSceneButtons();
-    selectScene(customScene);
-}
-
-function updateCharStat(id, field, value) {
-    let char = CHARACTERS.find(c => c.id === id);
-    if (char && value > 0) {
-        if (field === 'patience') char.patienceMax = parseFloat(value) * 60;
-        if (field === 'toilet') char.toiletTimeMax = parseFloat(value) * 60;
-    }
-}
-
-function deleteCurrentScene() {
-    if (!currentScene || !currentScene.isCustom) return;
-    let index = SCENES.findIndex(s => s.id === currentScene.id);
-    if (index > -1) {
-        SCENES.splice(index, 1);
-    }
-    renderSceneButtons();
-    currentScene = null;
-    document.getElementById('scene-desc-title').innerText = "请选择场景";
-    document.getElementById('scene-desc-text').innerText = "...";
-    document.getElementById('btn-start').disabled = true;
-    document.getElementById('btn-delete-scene').style.display = 'none';
-}
-
-function resetCharacters() {
-    CHARACTERS.forEach(c => {
-        c.patienceMax = c.defaultPMax;
-        c.toiletTimeMax = c.defaultTMax;
-    });
-    alert("所有少女的肠胃数据已重置为初始状态！");
-    if (document.getElementById('screen-gallery').classList.contains('active')) {
-        initGallery(); 
-    }
-}
-
-function initGallery() {
-    const cont = document.getElementById('gallery-container');
-    cont.innerHTML = '';
-    CHARACTERS.forEach(c => {
-        let pHtml = sysSettings.experimental ? 
-            `<input type="number" style="width:40px; height:18px; font-size:12px;" value="${c.patienceMax/60}" onchange="updateCharStat(${c.id}, 'patience', this.value)">` : 
-            `<b>${c.patienceMax/60}</b>`;
-            
-        let tHtml = sysSettings.experimental ? 
-            `<input type="number" style="width:40px; height:18px; font-size:12px;" value="${c.toiletTimeMax/60}" onchange="updateCharStat(${c.id}, 'toilet', this.value)">` : 
-            `<b>${c.toiletTimeMax/60}</b>`;
-
-        cont.innerHTML += `
-            <div class="gallery-item" style="border-color:${c.color}">
-                <div class="gallery-header">
-                    <div class="girl-avatar" style="background:${c.color};">
-                        <img src="${c.face}" alt="${c.name}">
-                    </div>
-                    <div><h4 style="margin:0; color:#ff1493;">${c.name} <span class="tag">${c.identity}</span></h4></div>
-                </div>
-                <div class="gallery-desc">
-                    ${c.bio}<br>
-                    <div style="background:#fff0f5; padding:4px; margin-top:4px; border-radius:4px; border:1px dashed var(--pink-dark);">
-                        ⏱️忍耐: ${pHtml} 分钟<br>
-                        🚽占用: ${tHtml} 分钟
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-}
-
-/* ================= 游戏核心循环 ================= */
-function startGame() {
-    let count, shuffled;
-
-    // 判断受害人员的构造方式
-    if (sysSettings.customVictims) {
-        count = selectedVictims.length;
-        let selectedChars = CHARACTERS.filter(c => selectedVictims.includes(c.id));
-        shuffled = selectedChars.sort(() => 0.5 - Math.random());
-    } else {
-        count = parseInt(document.getElementById('girl-count').value);
-        if (count < 1) count = 1; if (count > 20) count = 20;
-        shuffled = [...CHARACTERS].sort(() => 0.5 - Math.random()).slice(0, count);
-    }
-    
-    gameTick = 0;
-    stats = { success: 0, fail: 0, total: count, neglectedFails: 0 };
-    
-    queue = shuffled.map(c => ({
-        ...c,
-        patience: c.patienceMax,
-        nextBubbleTick: gameTick + Math.floor(Math.random() * 15) + 3,
-        // 音效控制状态重置
-        nextNormalSoundTick: undefined,
-        nextRedBellyTick: undefined,
-        nextRedFartTick: undefined
-    }));
-
-    stalls = [];
-    for(let i=0; i<currentScene.stalls; i++) {
-        stalls.push({ 
-            id: i, isOpen: true, occupant: null, timeLeft: 0, emptyTicks: 0,
-            // 音效控制
-            phase1Duration: 0,
-            nextSoundTick: 0
-        });
-    }
-
-    document.getElementById('queue-container').innerHTML = '';
-    document.getElementById('stall-container').innerHTML = '';
-
-    const gameScreen = document.getElementById('screen-game');
-    if (currentScene.bg) {
-        gameScreen.style.backgroundImage = `url(${currentScene.bg})`;
-    } else {
-        gameScreen.style.backgroundImage = `url(${ORIGINAL_BG})`;
-    }
-
-    renderGameUI();
-    showScreen('screen-game');
-    
-    setSpeed(1); 
-}
-
-function setSpeed(s) {
-    gameSpeed = s;
-    [1, 3, 10, 30].forEach(spd => {
-        document.getElementById(`btn-spd-${spd}`).style.borderColor = (spd === s) ? '#fff' : 'var(--pink-border)';
-    });
-
-    if (gameLoop) clearInterval(gameLoop);
-    gameLoop = setInterval(update, baseInterval / gameSpeed);
-}
-
-function assignStall(queueIndex) {
-    let emptyStall = stalls.find(s => s.isOpen && s.occupant === null);
-    if (!emptyStall) return; 
-    
-    let girl = queue[queueIndex];
-    queue.splice(queueIndex, 1); 
-    
-    emptyStall.occupant = girl;
-    emptyStall.isOpen = false;
-    emptyStall.timeLeft = girl.toiletTimeMax;
-    emptyStall.emptyTicks = 0; 
-    
-    // 初始化上厕所阶段的声音时间轴
-    emptyStall.phase1Duration = 30 + 0.1 * girl.toiletTimeMax;
-    emptyStall.nextSoundTick = gameTick; // 一进去立马触发一次
-    
-    renderGameUI();
-}
-
-function update() {
-    gameTick++;
-
-    stalls.forEach(stall => {
-        if (stall.isOpen && stall.occupant === null) {
-            stall.emptyTicks++;
-        } else {
-            stall.emptyTicks = 0;
-        }
-    });
-    
-    for (let i = queue.length - 1; i >= 0; i--) {
-        let g = queue[i];
-        g.patience--;
-        
-        // 固定的红条阈值：剩余3分钟 (180秒)
-        let isRed = g.patience <= 180;
-
-        // ---------- 队列音效逻辑 ----------
-        if (isRed) {
-            // 红血状态：持续播放肠鸣音
-            if (g.nextRedBellyTick === undefined || gameTick >= g.nextRedBellyTick) {
-                playLocalSound('belly');
-                g.nextRedBellyTick = gameTick + Math.floor(Math.random() * 2) + 3; // 3~4秒后再次触发
-            }
-            
-            // 每 3~5 秒 30%概率触发一次放屁
-            if (g.nextRedFartTick === undefined || gameTick >= g.nextRedFartTick) {
-                if (Math.random() < 0.30) {
-                    playLocalSound('fart');
-                }
-                g.nextRedFartTick = gameTick + Math.floor(Math.random() * 3) + 3; // 3~5秒判定CD
-            }
-        } else {
-            // 正常状态：每4~10秒触发一次判定
-            if (g.nextNormalSoundTick === undefined || gameTick >= g.nextNormalSoundTick) {
-                let randChance = Math.random();
-                if (randChance < 0.20) { 
-                    playLocalSound('belly'); // 20% 概率肠鸣
-                } else if (randChance < 0.25) { 
-                    playLocalSound('fart'); // 在接下来的 5% 概率内放屁 (20%~25%即5%)
-                }
-                g.nextNormalSoundTick = gameTick + Math.floor(Math.random() * 7) + 4; // 冷却设为 4~10 秒
-            }
-        }
-        
-        // 失禁逻辑
-        if (g.patience <= 0) {
-            stats.fail++;
-            if (stalls.some(s => s.emptyTicks >= 30)) {
-                stats.neglectedFails++;
-            }
-            queue.splice(i, 1);
-            playLocalSound('incontinence'); // 播放失禁音效
-            continue;
-        }
-
-        let urgencyModifier = isRed ? 2 : 6; 
-        if (gameTick >= g.nextBubbleTick) {
-            // 根据红血状态选择对应的文案库
-            let quotePool = isRed ? QUOTES_EXTREME : QUOTES_NORMAL;
-            g.showBubble = quotePool[Math.floor(Math.random() * quotePool.length)];
-            g.hideBubbleTick = gameTick + Math.floor(Math.random() * 4) + 3; 
-            g.nextBubbleTick = gameTick + urgencyModifier + Math.floor(Math.random() * 20); 
-        }
-        if (g.showBubble && gameTick > g.hideBubbleTick) {
-            g.showBubble = null;
-        }
-    }
-
-    stalls.forEach(stall => {
-        if (!stall.isOpen && stall.occupant) {
-            stall.timeLeft--;
-            let timeSpent = stall.occupant.toiletTimeMax - stall.timeLeft;
-
-            // ---------- 隔间音效逻辑 ----------
-            // 只要还在上厕所（timeLeft > 0），就持续播放腹泻声
-            if (gameTick >= stall.nextSoundTick && stall.timeLeft > 0) {
-                if (timeSpent <= stall.phase1Duration) {
-                    // 第一阶段：连续播放，模拟马上接下一个 (间隔2秒)
-                    playLocalSound('diarrhea');
-                    stall.nextSoundTick = gameTick + 2; 
-                } else {
-                    // 第二阶段：间隔稍微变长，每 2~4 秒播放一个，直到结束
-                    playLocalSound('diarrhea');
-                    stall.nextSoundTick = gameTick + Math.floor(Math.random() * 3) + 2;
-                }
-            }
-
-            // 倒计时结束，开门并播放冲水声
-            if (stall.timeLeft <= 0) {
-                stats.success++;
-                stall.occupant = null;
-                stall.isOpen = true; 
-                playLocalSound('flush'); // <--- 冲水声移到这里，在开门解脱时播放
-            }
-        }
-    });
-    
-    if (queue.length === 0 && stalls.every(s => s.occupant === null)) {
-        clearInterval(gameLoop);
-        setTimeout(endGame, 1000); 
-        return; 
-    }
-
-    renderGameUI();
-}
-
-function renderGameUI() {
-    document.getElementById('game-time').innerText = `已流逝时间: ${formatTime(gameTick)}`;
-    document.getElementById('stat-success').innerText = stats.success;
-    document.getElementById('stat-fail').innerText = stats.fail;
-
-    const qCont = document.getElementById('queue-container');
-    
-    queue.forEach((g, index) => {
-        // 进度条百分比依然基于总忍耐度计算
-        let pPercent = Math.max(0, (g.patience / g.patienceMax) * 100);
-        
-        // 红血样式固定为忍耐低于180秒
-        let isRed = g.patience <= 180;
-        let colorClass = isRed ? 'bar-patience low' : 'bar-patience';
-        
-        let dialogueText = g.showBubble ? `「 ${g.showBubble} 」` : '......';
-        let cardId = `queue-card-${g.id}`;
-        let existingCard = document.getElementById(cardId);
-        
-        if (!existingCard) {
-            let div = document.createElement('div');
-            div.className = 'girl-card';
-            div.id = cardId;
-            div.innerHTML = `
-                <div class="card-top">
-                    <div class="girl-avatar" style="background:${g.color};">
-                        <img src="${g.face}" alt="${g.name}">
-                    </div>
-                    <div class="girl-info">
-                        <strong>${g.name}</strong> <span class="tag" style="font-size:10px; color:#fff; background:var(--pink-dark); padding:2px 6px; border-radius:4px; margin-left:5px;">${g.identity}</span>
-                        <div style="font-size:11px; color:#666; margin-top:2px;">剩余忍耐: <span class="p-time" style="${isRed?'color:red;font-weight:bold;':''}">${formatTime(g.patience)}</span></div>
-                        <div class="bar-bg"><div class="bar-fill ${colorClass}" style="width:${pPercent}%;"></div></div>
-                        <div style="font-size:11px; margin-top:4px; color:#8B4513; font-weight:bold;">🚽 需占用: ${formatTime(g.toiletTimeMax)}</div>
-                    </div>
-                    <button class="act-btn" style="padding: 6px 12px; font-size:14px;" onclick="assignStall(${index})">让她去!</button>
-                </div>
-                <div class="card-bottom">${dialogueText}</div>
-            `;
-            qCont.appendChild(div);
-        } else {
-            let pTime = existingCard.querySelector('.p-time');
-            pTime.innerText = formatTime(g.patience);
-            pTime.style.color = isRed ? 'red' : '';
-            pTime.style.fontWeight = isRed ? 'bold' : '';
-            
-            let bar = existingCard.querySelector('.bar-fill');
-            bar.className = `bar-fill ${colorClass}`;
-            bar.style.width = `${pPercent}%`;
-            
-            existingCard.querySelector('.card-bottom').innerText = dialogueText;
-            existingCard.querySelector('.act-btn').setAttribute('onclick', `assignStall(${index})`);
-        }
-    });
-
-    Array.from(qCont.children).forEach(child => {
-        let id = child.id.replace('queue-card-', '');
-        if (!queue.find(g => g.id == id)) child.remove();
-    });
-
-    const sCont = document.getElementById('stall-container');
-    
-    stalls.forEach(stall => {
-        let stallId = `stall-div-${stall.id}`;
-        let existingStall = document.getElementById(stallId);
-        let openClass = stall.isOpen ? 'open' : '';
-
-        if (!existingStall) {
-            let div = document.createElement('div');
-            div.id = stallId;
-            div.className = `stall ${openClass}`;
-            div.innerHTML = `
-                <div class="stall-door">🚪</div>
-                <div class="stall-inside">🚽</div>
-                <div class="stall-timer" style="position:absolute; bottom:-20px; font-size:12px; width:100%; text-align:center; font-weight:bold; color:#8B4513;"></div>
-            `;
-            sCont.appendChild(div);
-            existingStall = div;
-        }
-
-        existingStall.className = `stall ${openClass}`;
-        let insideDiv = existingStall.querySelector('.stall-inside');
-        let timerDiv = existingStall.querySelector('.stall-timer');
-
-        if (stall.occupant) {
-            if (!insideDiv.querySelector(`img[alt="${stall.occupant.name}"]`)) {
-                insideDiv.innerHTML = `<img src="${stall.occupant.face}" alt="${stall.occupant.name}">`;
-            }
-            timerDiv.innerText = `剩余:${formatTime(stall.timeLeft)}`;
-        } else {
-            if (insideDiv.innerHTML !== '🚽') insideDiv.innerHTML = '🚽';
-            timerDiv.innerText = '';
-        }
-    });
-
-    let retreatBtn = document.getElementById('btn-retreat');
-    if (queue.length === 0 && !stalls.every(s => s.occupant === null)) {
-        retreatBtn.innerText = "直接结算";
-        retreatBtn.style.background = "#4caf50";
-        retreatBtn.style.borderColor = "#388e3c";
-        retreatBtn.onclick = quickSettle;
-    } else {
-        retreatBtn.innerText = "返回标题";
-        retreatBtn.style.background = "#d1495b";
-        retreatBtn.style.borderColor = ""; 
-        retreatBtn.onclick = forceRetreat;
-    }
-}
-
-function forceRetreat() {
-    if (gameLoop) clearInterval(gameLoop); 
-    goHome(); 
-}
-
-function quickSettle() {
-    if (gameLoop) clearInterval(gameLoop); 
-    
-    stalls.forEach(stall => {
-        if (!stall.isOpen && stall.occupant) {
-            stats.success++; 
-            stall.occupant = null; 
-            stall.isOpen = true;
-            playLocalSound('flush'); // 点击直接结算时也播放冲水声
-        }
-    });
-
-    endGame(); 
-}
-
-function endGame() {
-    clearInterval(gameLoop);
-    document.getElementById('res-time').innerText = formatTime(gameTick);
-    document.getElementById('res-success').innerText = stats.success;
-    document.getElementById('res-fail').innerText = stats.fail;
-    
-    let evalText = "";
-    let evalColor = "";
-    
-    if (stats.fail === 0) {
-        evalText = "【神圣的救赎主】恭喜，你完成了一场不可能的奇迹！在你的精密调度下，每一道防线都得以守住。你是她们心中唯一的英雄，这片狭窄的空间因为你的存在，免于沦为尊严的荒原。";
-        evalColor = "#32CD32"; 
-    } 
-    else if (stats.success < currentScene.stalls && stats.fail > 0) {
-        evalText = "【名为“秩序”的虐杀】这是最深沉的讽刺。明明空位就在眼前，你却用那种傲慢的手法，精准地挑选着谁该崩溃，谁该毁灭。你享受这种玩弄他人尊严的快感吗？看着空荡荡的隔间和满地的眼泪，这已经不是游戏，而是你的一场个人施虐秀。";
-        evalColor = "#000000"; 
-    } 
-    else if (stats.neglectedFails > 3 || stats.neglectedFails >= stats.total * 0.5) {
-        evalText = "【凝视深渊的玩偶师】每一秒钟的流逝对她们来说都是永恒的折磨，而你却像盯着实验室小白鼠一样，在门外冷眼计算着她们括约肌的极限。你明明可以伸出援手，却选择了在一旁死亡静默。这种看着他人从希望走向绝望的崩坏快感，才是你真正的目的吧？";
-        evalColor = "#800080"; 
-    } 
-    else if (stats.neglectedFails > 0) {
-        evalText = "【崩坏的调停者】哪怕只有一次，你也被那种“想要看人出丑”的念头俘虏了。你故意漏掉了那个求救的眼神，在那一刻，你并不是在玩模拟器，而是在享受那种主宰他人“社会性生死”的微小权力。";
-        evalColor = "#FF8C00"; 
-    } 
-    else {
-        evalText = "【时代的悲剧性眼泪】尽力了，但现实就是这么残酷。资源匮乏的诅咒让这里变成了没有硝烟的战场。即使你已经心力交瘁，依然无法阻挡那崩坏的终局。这并不是你的错，而是这个世界对少女们太温柔了——除了这里的马桶。";
-        evalColor = "#d1495b"; 
-    }
-    
-    let evalDom = document.getElementById('res-eval');
-    evalDom.innerText = evalText;
-    evalDom.style.color = evalColor;
-    
-    showScreen('screen-result');
-}
-</script>
+        <div id="result-challenges" class="result-challenges"></div>
+        <section class="result-cast-section">
+          <h3>角色事后评价</h3>
+          <p>她们会根据本局是否获救、入厕时机与隔间类型留下不同评价。</p>
+          <div id="result-character-comments" class="result-character-comments"></div>
+        </section>
+        <div class="form-actions"><button data-action="replay" class="primary">再来一次</button><button data-action="home" class="ghost">返回主页</button></div>
+      </div>
+    </section>
+  </main>
+  <script src="./game.js"></script>
 </body>
 </html>
