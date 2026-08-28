@@ -22,6 +22,7 @@
           <button data-action="open-settings">游戏设置</button>
         </div>
         <div id="home-record" class="record-strip">尚无救援纪录</div>
+        <div id="web-save-reminder" class="web-save-reminder" hidden>💾 如需保存游玩数据，请到“游戏设置”内导出 JSON 存档。</div>
       </div>
     </section>
 
@@ -116,20 +117,20 @@
         <div><span class="top-label">得分</span><strong id="game-score">0</strong></div>
         <div><span class="top-label">救援 / 失败</span><strong><i id="stat-success">0</i> / <i id="stat-fail">0</i></strong></div>
         <div id="speed-controls" class="speed-controls" aria-label="显示时间与现实时间比例"><button data-speed="1" class="small" title="现实1秒等于游戏1秒">1:1</button><button data-speed="2" class="small" title="现实1秒等于游戏2秒">2:1</button><button data-speed="4" class="small active-speed" title="默认：现实1秒等于游戏4秒">普通 4:1</button><button data-speed="8" class="small" title="现实1秒等于游戏8秒">8:1</button><button data-speed="16" class="small" title="现实1秒等于游戏16秒">16:1</button><button id="btn-pause" data-action="pause" class="small">暂停</button></div>
-        <div class="game-view-actions"><button id="btn-game-big" data-action="toggle-game-big" class="small ghost">大图标：关</button><button data-action="retreat" class="small danger">结束本局</button></div>
+        <div class="game-view-actions"><button id="btn-game-big" data-action="toggle-game-big" class="small ghost">大图标：关</button><button data-action="retreat" class="small danger">放弃本局</button></div>
       </header>
       <div class="mission-bar panel"><span id="wave-status">第 1 波即将到达</span><div class="mission-progress"><i id="mission-progress-fill"></i></div><span id="combo-status">连救 ×0</span></div>
+      <div class="skill-bar panel">
+        <button data-skill="comfort" class="skill-button"><span>💗 全场安抚</span><small>全体等待者恢复10%</small><b id="skill-comfort-count">0</b></button>
+        <button data-skill="rush" class="skill-button"><span>📣 全体催促</span><small>所有隔间剩余时间 −10%</small><b id="skill-rush-count">0</b></button>
+        <button data-skill="focus" class="skill-button"><span>📋 全场疏导</span><small>持续1:00，自动救援≤3秒者</small><b id="skill-focus-count">0</b></button>
+      </div>
       <div class="game-area">
         <section class="queue-area panel">
           <div class="area-title"><h3>等待队列</h3><div class="queue-title-actions"><span id="queue-count">0 人等待</span><button id="btn-urgency-sort" data-action="toggle-urgency-sort" class="small ghost">紧急度排序：关</button></div></div>
           <div id="arrival-feed" class="arrival-feed"></div><div id="queue-container"></div><div id="queue-empty" class="empty-state">下一波角色还在赶来……</div>
         </section>
         <section class="stall-area panel"><div class="area-title"><h3>隔间状态</h3><span id="stall-hint">蹲厕省时，马桶加分</span></div><div id="stall-container" class="stall-grid"></div></section>
-      </div>
-      <div class="skill-bar panel">
-        <button data-skill="comfort" class="skill-button"><span>💗 全场安抚</span><small>全体等待者恢复10%</small><b id="skill-comfort-count">0</b></button>
-        <button data-skill="rush" class="skill-button"><span>📣 全体催促</span><small>所有隔间剩余时间 −10%</small><b id="skill-rush-count">0</b></button>
-        <button data-skill="focus" class="skill-button"><span>📋 全场疏导</span><small>持续1:00，自动救援≤3秒者</small><b id="skill-focus-count">0</b></button>
       </div>
       <div id="toast" class="toast" role="status"></div>
       <div id="pause-overlay" class="pause-overlay" hidden><div><h2>游戏已暂停</h2><button data-action="pause" class="primary">继续调度</button></div></div>
