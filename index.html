@@ -1,158 +1,303 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#ff69b4">
-  <title>厕所排队模拟器：调度危机</title>
-  <link rel="stylesheet" href="./styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>便意危机！学校里的极限忍耐！</title>
+<style>
+:root{
+  --bg:#12100f; --bg2:#1b1817; --line:#3a322e; --fg:#ece5dd; --muted:#9b9089;
+  --acc:#e0a04a; --good:#7fc98a; --bad:#e0605c; --hard:#c4569a; --ev:#6fa8dc; --tr:#c9b45a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC",system-ui,sans-serif;
+  line-height:1.9;font-size:15px}
+.wrap{max-width:1080px;margin:0 auto;padding:18px 16px 60px;display:flex;gap:18px;align-items:flex-start}
+.main{flex:1;min-width:0}
+.side{width:260px;flex:none;position:sticky;top:18px}
+h1{font-size:26px;margin:.2em 0;letter-spacing:1px}
+h2{font-size:19px;margin:1.2em 0 .4em;color:var(--acc)}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.screen{display:none}
+.screen.on{display:block;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.panel{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:14px}
+button{font-family:inherit;font-size:14px;cursor:pointer}
+.btn{background:var(--acc);color:#231a10;border:none;border-radius:6px;padding:10px 20px;font-weight:700}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.4;cursor:not-allowed;filter:none}
+.mini{background:transparent;border:1px solid var(--line);color:var(--fg);border-radius:5px;padding:3px 10px;font-size:12.5px}
+.mini:hover{border-color:var(--acc);color:var(--acc)}
+.opt{display:block;width:100%;text-align:left;background:#221e1c;border:1px solid var(--line);
+  color:var(--fg);border-radius:8px;padding:11px 14px;margin:8px 0;line-height:1.7}
+.opt:hover:not(:disabled){border-color:var(--acc);background:#2a2421}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.choice{display:inline-block;background:#221e1c;border:1px solid var(--line);color:var(--fg);
+  border-radius:8px;padding:10px 14px;margin:6px 6px 6px 0;text-align:left;max-width:320px;vertical-align:top}
+.choice.sel{border-color:var(--acc);background:#33291d;color:var(--acc)}
+.choice b{display:block;font-size:15px}
+/* HUD */
+#hud .row{display:flex;justify-content:space-between;font-size:13px;margin-top:8px}
+.track{height:7px;background:#2a2421;border-radius:4px;overflow:hidden;margin-top:3px}
+.track i{display:block;height:100%;transition:width .4s}
+#renB{background:linear-gradient(90deg,#e0605c,#e0a04a)}
+#moodB{background:linear-gradient(90deg,#6fa8dc,#7fc98a)}
+.itemrow{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;
+  border-top:1px dashed var(--line);padding:6px 0}
+.debuff{display:block;background:#3a1f22;border:1px solid #6b3236;color:#e79a97;
+  border-radius:6px;padding:6px 8px;font-size:12px;margin-top:5px}
+.debuff-desc{display:block;color:#d8aaa8;margin-top:2px;line-height:1.4}
+/* map */
+#mapGraph{position:relative;overflow-x:auto;padding:8px 2px 13px;scrollbar-color:#65503e #201d1b;scrollbar-width:thin}
+#mapCols{display:flex;gap:58px;min-width:max-content;padding:12px 18px;position:relative;z-index:2}
+#mapEdges{position:absolute;left:2px;top:8px;z-index:1;pointer-events:none;overflow:visible;color:#665a52}
+#mapEdges line{stroke:currentColor;stroke-width:1.6;opacity:.42}
+#mapEdges line.dashed{stroke-dasharray:7 6;color:var(--acc)}
+#mapEdges line.active{stroke-width:2.6;opacity:.95}
+.mapcol{width:170px;min-width:170px;display:flex;flex-direction:column;gap:18px;justify-content:center;position:relative}
+.node{background:#221e1c;border:1px solid var(--line);border-radius:8px;padding:10px 12px;opacity:.38;position:relative;z-index:2}
+.node.sel{cursor:pointer;opacity:1}
+.node.sel:hover{border-color:var(--acc);transform:translateX(3px);transition:.2s}
+.node.blocked{opacity:.25}
+.node.done{opacity:.22}.node.current{opacity:1;border-color:var(--acc);box-shadow:0 0 0 1px #6f522d inset}
+.ntype{font-size:11.5px;letter-spacing:2px}
+.node.ambush .ntype{color:var(--bad)} .node.hard .ntype{color:var(--hard)}
+.node.event .ntype{color:var(--ev)} .node.mini .ntype{color:#9c8ee8}
+.node.fate .ntype,.node.final .ntype{color:var(--acc)}
+.nname{font-size:14px;margin-top:2px}
+.cost{font-size:11.5px;color:var(--acc);margin-top:4px}
+/* node view */
+#nodeText{white-space:pre-wrap;text-indent:2em;margin:10px 0 16px}
+.result{border-radius:8px;padding:12px 16px;margin-top:16px;white-space:pre-wrap}
+.result.best{background:#182b20;border:1px solid #57966a}
+.result.good{background:#1b2a1d;border:1px solid #3d6b45}
+.result.tradeoff{background:#29251a;border:1px solid #76652f}
+.result.bad{background:#2b1b1b;border:1px solid #6b3a38}
+.result.neutral{background:#22201c;border:1px solid var(--line)}
+#resultTag{font-weight:700;letter-spacing:2px}
+#resultText{text-indent:2em;margin:6px 0}
+#resultEff{font-size:13.5px;color:var(--acc);margin-top:8px}
+#nodeEntryEff{font-size:13px;color:var(--good);margin:4px 0 10px}
+#hintBox{background:#1d2430;border:1px solid #3b5573;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:14px}
+#timerWrap{margin-bottom:10px}
+#timerB{background:linear-gradient(90deg,#e0605c,#e0a04a);transition:width 1s linear}
+.card{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;
+  border-top:1px dashed var(--line);padding:8px 0}
+.price{color:var(--acc);font-size:12.5px}
+#toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:#2c2622;
+  border:1px solid var(--acc);color:var(--fg);padding:8px 18px;border-radius:20px;opacity:0;
+  transition:.3s;pointer-events:none;font-size:13.5px}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#endText,#endExtra{white-space:pre-wrap;text-indent:2em}
+table{border-collapse:collapse;width:100%;font-size:13.5px;margin:6px 0}
+td,th{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+th{color:var(--acc)}
+#rules th{min-width:4em;white-space:nowrap}
+ul{padding-left:1.4em}
+li{margin:.2em 0}
+@media(max-width:820px){.wrap{flex-direction:column;align-items:stretch;width:100%}.main{width:100%}.side{width:100%;position:static}}
+</style>
 </head>
 <body>
-  <main id="game-container" aria-live="polite">
-    <section id="screen-home" class="screen active">
-      <div class="home-card panel">
-        <p class="eyebrow">QUEUE CRISIS</p>
-        <h1>🚽 厕所排队模拟器</h1>
-        <p class="subtitle">在尊严崩溃之前，安排好每一个隔间。</p>
-        <div class="mascot"><img alt="随机看板角色"></div>
-        <div class="menu-buttons">
-          <button id="btn-open-scenes" data-action="open-scenes" class="primary">开始游戏</button>
-          <button data-action="open-help">玩法与计分说明</button>
-          <button data-action="open-gallery">角色图鉴</button>
-          <button data-action="open-settings">游戏设置</button>
-        </div>
-        <div id="asset-init-status" class="asset-init-status" hidden>正在初始化轻量图片资源……</div>
-        <div id="home-record" class="record-strip">尚无救援纪录</div>
-        <div id="web-save-reminder" class="web-save-reminder" hidden>💾 如需保存游玩数据，请到“游戏设置”内导出 JSON 存档。</div>
-      </div>
-    </section>
+<div class="wrap">
+<div class="main">
 
-    <section id="screen-help" class="screen">
-      <div class="screen-heading">
-        <div><p class="eyebrow">HOW TO PLAY</p><h2>玩法与计分说明</h2></div>
-        <button data-action="home" class="ghost">返回主页</button>
-      </div>
-      <div class="help-panel panel">
-        <section class="help-lead"><h3>目标：让所有人守住尊严</h3><p>角色会分批到达，忍耐值持续下降。把更危急的人安排进空闲隔间，并根据角色特性选择蹲厕或马桶。游戏没有强制结束时间；总耗时只用于记录，不会让本局自动失败。“紧急度排序”会保留队首，只将其余卡片按剩余忍耐时间从短到长显示，不会改变真实队列。</p></section>
-        <div class="help-grid">
-          <section><h3>忍耐与极限</h3><ul><li><b>从容入厕：</b>剩余忍耐 ≥65%</li><li><b>及时救援：</b>剩余忍耐 35%～64.99%</li><li><b>极限抢救：</b>剩余忍耐 15%～34.99%</li><li><b>千钧一发：</b>剩余忍耐不足15%</li></ul><p>忍耐归零即救援失败：扣除90分、当前连救清零。低于35%入厕会计为一次“极限救援”。难度只改变初始忍耐上限：轻松×1.4、标准×1、危机×0.6，倒计时流速保持一致。</p></section>
-          <section><h3>隔间差异</h3><ul><li><b>蹲厕：</b>基础占用时间减少20%，适合快速周转。</li><li><b>马桶：</b>最终得分乘以1.3，适合追求高分。</li><li><b>角色特性：</b>部分角色会进一步改变占用时间、技能效果或隔间加分。</li></ul><p>自定义场景至少需要1个隔间，蹲厕与马桶合计最多10个。</p></section>
-          <section><h3>基础得分公式</h3><div class="formula">单人得分 = (100 + 紧急度×100 + 当前连救×12 + 特性修正) × 隔间倍率 × 难度倍率</div><p>紧急度 = 1 − 入厕时剩余忍耐比例。越接近极限，基础分越高；马桶倍率为1.3，蹲厕为1。难度倍率：轻松0.75、标准1、危机1.5。</p><p class="example">例：标准难度、剩余忍耐30%、3连救、无特性修正并使用马桶：<br>(100 + 70 + 36) × 1.3 ≈ 268分。</p></section>
-          <section><h3>特殊得分修正</h3><ul><li>星奈：紧急度≥60%时 +80</li><li>涼風：使用马桶 +45</li><li>詩織：马桶 +90，蹲厕 −40</li><li>凛音：紧急度≥75%时 +140</li><li>亚里沙：使用马桶 +100</li></ul><p>成功救援会让连救数 +1，且每一层连救为该角色增加12点基础分。</p></section>
-          <section><h3>技能获得与效果</h3><ul><li><b>开局库存：</b>三种技能均为0。</li><li><b>技能掉落：</b>每当一名角色成功离开厕所，有60%概率随机获得一种技能。</li><li><b>安抚：</b>所有等待者恢复最大忍耐值的10%。</li><li><b>全体催促：</b>所有使用中的隔间，剩余占用时间减少10%。</li><li><b>全场疏导：</b>持续1:00；存在空隔间时，自动把剩余忍耐≤3秒的人送入用时更短的可用厕所。</li></ul><p>部分角色特性会强化对应技能。</p></section>
-          <section><h3>结算评级</h3><ul><li><b>S：</b>全员获救、三个挑战全完成，且平均每人得分≥185。</li><li><b>A：</b>成功率≥90%，且平均每人得分≥145。</li><li><b>B：</b>成功率≥72%。</li><li><b>C：</b>成功率≥50%。</li><li><b>D：</b>成功率不足50%。</li></ul><p>场景挑战从上到下为：达成3连拯救、失禁人数不超过1、全员守住尊严。</p></section>
-        </div>
-      </div>
-    </section>
+<!-- 标题 -->
+<div class="screen on" id="title">
+  <div class="panel" style="text-align:center;padding:40px 20px">
+    <h1>《便意危机！学校里的极限忍耐！》</h1>
+    <p class="muted">你将扮演一个因为几种不同的原因在学校上学期间拉了肚子的女学生，<br>
+      以奋力让自己在到达厕所之前不拉裤子里为目标去完成游戏任务。</p>
+    <p class="muted small">教室 → 走廊 → 楼梯间 → 廊道 → 洗手间　共五个场景</p>
+    <p style="margin-top:26px">
+      <button class="btn" id="toSetup">开始游戏</button>
+      <button class="btn ghost" id="toRules">游戏规则</button>
+    </p>
+  </div>
+</div>
 
-    <section id="screen-settings" class="screen">
-      <div class="screen-heading">
-        <div><p class="eyebrow">OPTIONS</p><h2>游戏设置</h2></div>
-        <button data-action="home" class="ghost">返回主页</button>
-      </div>
-      <div class="settings-panel panel">
-        <div class="setting-row"><span>🔊 游戏音效<small>高倍速不会堆叠播放</small></span><button id="btn-audio" data-action="toggle-audio" class="toggle">开启</button></div>
-        <label class="setting-row"><span>🔈 音量<small id="vol-display">50%</small></span><input type="range" id="vol-slider" min="0" max="1" step="0.05" value="0.5"></label>
-        <div class="setting-row"><span>🧪 编辑角色参数<small>在图鉴里修改忍耐与占用时间</small></span><button id="btn-exp" data-action="toggle-experimental" class="toggle">关闭</button></div>
-        <div class="setting-row"><span>👯 自选出场角色<small>开局前从图鉴中选择</small></span><button id="btn-custom-victims" data-action="toggle-custom-victims" class="toggle">关闭</button></div>
-        <div id="web-original-setting" class="setting-row" hidden><span>🖼️ 加载并使用原图<small id="original-assets-status">网页版默认使用轻量缩略图；开启后下载高清原图并优先显示。</small></span><button id="btn-original-assets" data-action="toggle-original-assets" class="toggle off">关闭</button></div>
-        <label class="setting-row"><span>🎯 默认难度</span><select id="difficulty-select"><option value="casual">轻松</option><option value="normal" selected>标准</option><option value="crisis">危机</option></select></label>
-        <div class="save-file-box">
-          <div><strong>📁 独立 JSON 存档</strong><small>可跨设备、浏览器和网站地址携带；浏览器仍会自动缓存。</small></div>
-          <div class="settings-actions"><button data-action="export-save" class="primary">导出 JSON</button><button data-action="import-save" class="ghost">导入 JSON</button><input id="save-file-input" type="file" accept="application/json,.json" hidden></div>
-        </div>
-        <div class="settings-actions">
-          <button data-action="reset-characters" class="danger">重置角色参数</button>
-          <button data-action="reset-save" class="danger ghost-danger">清除全部存档</button>
-        </div>
-      </div>
-    </section>
+<!-- 规则 -->
+<div class="screen" id="rules">
+  <div class="panel">
+    <h1>游戏说明与规则</h1>
+    <h2>三种属性</h2>
+    <ul>
+      <li><b>【忍耐】</b>：核心机制，直接影响结局走向。通常初始与上限均为 100（N3 的初始与上限为 80；此时主角已明显开始感受到强烈的欲望），越低越危险。<b>首次低于 60 获得一个 debuff；归零则游戏强制结束。</b></li>
+      <li><b>【体力】</b>：路线资源，初始 1。实线移动免费，虚线基础消耗 1 点；虚线可以改变出口，也可以在同列额外经历一个节点。每个限时节点还可消耗 1 点体力延长 5 秒。</li>
+      <li><b>【心情】</b>：初始 50，上限固定为 100，不再由【忍耐】决定。心情越高，忍耐损失越低：倍率 = 1.2−0.004×当前心情，即 0 心情约承受 120%，50 心情为 100%，100 心情约承受 80%。同一结果以结算前的心情计算倍率，再处理该结果的心情变化；若心情损失降到 0 以下，每溢出的 1 点负心情改由 1 点【忍耐】抵抗。</li>
+    </ul>
+    <h2>随机路线</h2>
+    <p>前四层每局随机生成 4～5 列，每列包含 2～3 个候选节点。节点和连线都会变化：<b>走短更加安全，走长平均收益更高</b>。第五层为无地图岔路的线性终局区，之前取得的情报、着装和钥匙会决定最终剧情。</p>
+    <ul>
+      <li><b>实线</b>：免费前进。</li>
+      <li><b>虚线</b>：基础消耗 1 点体力，可进入额外节点或另一个出口。</li>
+      <li><b>腿软</b>：走虚线时有 40% 概率额外消耗 1 点体力；即使触发也只会扣到 0，不会出现负数。</li>
+      <li><b>情报区</b>：第四层每局出现 1～2 个位置，但进入过一次后，其余位置不会重复提供同一份情报。</li>
+    </ul>
+    <h2>节点</h2>
+    <ul>
+      <li><b>【急袭】</b>：先无限时阅读剧情，点击“开始选择”后显示选项并进入 15 秒限时选择；最低选择时间为 5 秒。</li>
+      <li><b>【难忍急袭】</b>：选择时间 10 秒，坏结果额外损失 3 点基础忍耐，但惩罚已比旧版缓和。</li>
+      <li><b>【小游戏】</b>：随机生成方向、节拍或数字题目。点击“开始小游戏”后仍有 3 秒专门观察题目；随后题目收起、选项出现并进入限时选择。</li>
+      <li><b>【事件】</b>：通常拥有“完美处理／有效处理／有所取舍／失误”多个结果档位，并可能获得道具。</li>
+      <li><b>超时</b>：仍按最差选项处理，但负面数值只结算 70%。</li>
+    </ul>
+    <h2>着装</h2>
+    <table><tr><th>校服裙子</th><td>容易被同学发现——【心情】下降的速率增加 20%。</td></tr>
+    <tr><th>紧身裤</th><td>很难脱下来——在需要脱下裤子的场合【体力】−1；若【体力】不足则无法交互。五层厕所结束时若没有预留至少 1 点【体力】，将依据当时的【忍耐】判定：&gt;10 成功；5~10 之间进行一次 0/1 随机判定；&lt;5 失败。</td></tr></table>
+    <h2>难度</h2>
+    <table>
+      <tr><th>N0</th><td>【忍耐】首次低于 60 时随机获得一个 debuff。</td></tr>
+      <tr><th>N1</th><td>每一层额外扣除 5 点【忍耐】与 10 点实际【心情】；【忍耐】首次低于 60/40 时随机获得一个 debuff。</td></tr>
+      <tr><th>N2</th><td>每一层额外扣除 10 点【忍耐】和 10 点实际【心情】；【忍耐】首次低于 60/40/20 时分别随机获得一个 debuff。</td></tr>
+      <tr><th>N3</th><td>每一层额外扣除 14 点【忍耐】和 14 点实际【心情】；忍耐上限为 80；首次低于 60/40/20 时分别获得 debuff；事件和道具回复减半；初始随机获得 2 个 debuff。</td></tr>
+    </table>
+    <p class="muted small">难度表中的【忍耐】扣除是基础值，仍会受到当前【心情】的连续倍率影响；表中的【心情】扣除已经换算为通常着装下的实际值。</p>
+    <h2>临场策略</h2>
+    <p>开局时选择一项临场策略。每项策略都有明确的收益与代价，仅影响本局游戏。</p>
+    <table>
+      <tr><th>按原计划</th><td>不改变初始状态。</td></tr>
+      <tr><th>稳住节奏</th><td>所有限时选择 +3 秒，但初始【体力】−1。</td></tr>
+      <tr><th>轻装快走</th><td>初始【体力】+1，但初始忍民币 −2。</td></tr>
+      <tr><th>精打细算</th><td>初始忍民币 +4，但初始【忍耐】−8。</td></tr>
+    </table>
+    <h2>附加难度</h2>
+    <p>可在开局勾选【ABCD 选项乱序】。开启后，每个节点的选项内容会重新排列并重新标记字母，正确答案的位置和字母都可能与上一局不同；剧情和数值本身不变。</p>
+    <h2>本日特殊状况</h2>
+    <p>每局随机出现一种全局状况，并在进入商店时揭示。它会改变道具、事件或移动规则，可以据此调整本局的购买与路线策略。</p>
+    <table>
+      <tr><th>自动贩卖机涨价</th><td>自动贩卖机选项贵 1 币，但普通【事件】提供的正向回复提高 25%（向上取整）。</td></tr>
+      <tr><th>本日楼道拥挤</th><td>普通【事件】造成的属性损失提高 20%（向上取整），但所有消耗忍民币的事件选项便宜 1 币。</td></tr>
+      <tr><th>体育课日</th><td>初始【体力】+1，但所有【心情】损失提高 20%（向上取整）。</td></tr>
+      <tr><th>阴雨天</th><td>虚线仍基础消耗 1 点体力；【暖宝宝】每次普通事件的恢复量由 2 提高到 3。</td></tr>
+    </table>
+    <h2>长路线道具</h2>
+    <p>【暖宝宝】改为每进入一个普通事件恢复 2 点忍耐；【存折卡】改为每进入一个普通事件获得 1 枚忍民币。它们单次收益降低，但会随本局实际经历的事件数量累积。能量饮料已替换为不会增加饮水负担的【能量药丸】。</p>
+    <h2>忍民币</h2>
+    <p>开局获得 20 个忍民币，可在开始前购买奇妙的小道具；<b>残留的忍民币在某些【事件】里有特殊效果。</b></p>
+    <h2>结局</h2>
+    <p>内含标准结局（好／坏）以及隐藏结局（好／坏），欢迎大家来探索。</p>
+    <p><button class="btn ghost" id="rulesBack">返回</button></p>
+  </div>
+</div>
 
-    <section id="screen-scene" class="screen">
-      <div class="screen-heading">
-        <div><p class="eyebrow">CHOOSE A SCENE</p><h2>选择事故现场</h2></div>
-        <button data-action="home" class="ghost">返回主页</button>
-      </div>
-      <div id="scene-buttons" class="scene-grid"></div>
-      <button data-action="toggle-custom-form" class="wide secondary">＋ 自定义场景</button>
-      <form id="custom-form" class="panel form-panel" hidden>
-        <div class="form-grid">
-          <label>场景标题<input type="text" id="cust-title" maxlength="18" placeholder="例如：暴雨音乐节"></label>
-          <div class="toilet-count-fields"><label>蹲厕数量<input type="number" id="cust-squat" value="2" min="0" max="10"></label><label>马桶数量<input type="number" id="cust-seated" value="1" min="0" max="10"></label></div>
-        </div>
-        <p class="form-note">蹲厕与马桶合计至少1个、最多10个。</p>
-        <label>事故简介<textarea id="cust-desc" maxlength="100" placeholder="这里发生了什么？"></textarea></label>
-        <fieldset><legend>选择背景图</legend><div id="bg-selector" class="bg-selector"></div></fieldset>
-        <div class="form-actions"><button type="submit" class="primary">保存并使用</button><button type="button" data-action="cancel-custom" class="ghost">取消</button></div>
-      </form>
-      <div id="scene-detail-box" class="panel scene-detail">
-        <div><h3 id="scene-desc-title">请选择场景</h3><p id="scene-desc-text">每个场景都有独特的客流与挑战。</p></div>
-        <div class="scene-config">
-          <label id="victim-count-container">出场人数<input type="number" id="girl-count" min="3" max="20" value="8"></label>
-          <label>难度<select id="scene-difficulty"><option value="casual">轻松</option><option value="normal" selected>标准</option><option value="crisis">危机</option></select></label>
-        </div>
-        <div id="scene-challenges" class="challenge-preview"></div>
-        <div class="form-actions">
-          <button id="btn-start" data-action="start-flow" disabled class="primary">开始游戏</button>
-          <button id="btn-delete-scene" data-action="delete-scene" hidden class="danger">删除场景</button>
-        </div>
-      </div>
-    </section>
+<!-- 开局设置 -->
+<div class="screen" id="setup">
+  <div class="panel">
+    <h1>着装选择</h1>
+    <button class="choice" data-outfit="校服裙子"><b>校服裙子</b><span class="muted small">容易被同学发现——【心情】下降速率 +20%。</span></button>
+    <button class="choice" data-outfit="紧身裤"><b>紧身裤</b><span class="muted small">很难脱下来——需要脱下裤子的场合【体力】−1；结局前若无预留体力，将按【忍耐】进行判定。</span></button>
+    <h1 style="margin-top:22px">难度选择</h1>
+    <button class="choice" data-diff="N0"><b>N0</b><span class="muted small">一顿很平常很健康的早餐，导致你很急的原因是因为量很大。忍耐首次低于60时，获得一个debuff。</span></button>
+    <button class="choice" data-diff="N1"><b>N1</b><span class="muted small">今天的牛奶似乎已经变质了……每层额外 −5【忍耐】−10【心情】；忍耐首次低于60/40时各获得一个debuff。</span></button>
+    <button class="choice" data-diff="N2"><b>N2</b><span class="muted small">早餐和牛奶似乎都变质了……每层额外 −10【忍耐】−10【心情】；忍耐首次低于60/40/20时各获得一个debuff。</span></button>
+    <button class="choice" data-diff="N3"><b>N3</b><span class="muted small">似乎连昨晚的晚餐都变质了……每层额外 −14【忍耐】−14【心情】；忍耐上限为80；回复减半；初始随机获得2个debuff。</span></button>
+    <h1 style="margin-top:22px">临场策略</h1>
+    <button class="choice" data-strategy="normal"><b>按原计划</b><span class="muted small">不改变初始状态。</span></button>
+    <button class="choice" data-strategy="steady"><b>稳住节奏</b><span class="muted small">所有限时选择 +3 秒，但初始【体力】−1。</span></button>
+    <button class="choice" data-strategy="light"><b>轻装快走</b><span class="muted small">初始【体力】+1，但初始忍民币 −2。</span></button>
+    <button class="choice" data-strategy="budget"><b>精打细算</b><span class="muted small">初始忍民币 +4，但初始【忍耐】−8。</span></button>
+    <h1 style="margin-top:22px">附加难度</h1>
+    <label class="choice" style="cursor:pointer"><b><input type="checkbox" id="shuffleOptions"> ABCD 选项乱序</b><span class="muted small">每个节点都会重新排列选项内容并重新标记字母，用来削弱背答案的优势。</span></label>
+    <p style="margin-top:20px"><button class="btn" id="toShop">下一步 · 忍民币商店</button></p>
+  </div>
+</div>
 
-    <section id="screen-select-victims" class="screen">
-      <div class="screen-heading"><div><p class="eyebrow">SELECT TEAM</p><h2>选择出场角色</h2></div><button data-action="back-scenes" class="ghost">返回场景</button></div>
-      <div class="selection-toolbar panel"><span>已选 <strong id="selected-count">0</strong> 人</span><div><button data-action="select-random" class="small">随机 8 人</button><button data-action="clear-selection" class="small ghost">清空</button></div></div>
-      <div id="select-container" class="gallery-grid select-grid"></div>
-      <button id="btn-confirm-victims" data-action="start-game" disabled class="primary wide">确定开始游戏</button>
-    </section>
+<!-- 商店 -->
+<div class="screen" id="shop">
+  <div class="panel">
+    <h1>忍民币商店</h1>
+    <p class="muted">进入游戏前，你可以购买一些奇妙的小道具带进去。<b>但请留意——残留的忍民币，或许会在某些【事件】里有特殊的效果。</b></p>
+    <div class="result neutral" id="conditionCard"></div>
+    <div id="shopList"></div>
+    <p style="margin-top:20px"><button class="btn" id="startGame">出发（上课铃已经响了）</button></p>
+  </div>
+</div>
 
-    <section id="screen-gallery" class="screen">
-      <div class="screen-heading"><div><p class="eyebrow">CHARACTER FILES</p><h2>角色档案</h2></div><div class="heading-actions"><button id="btn-gallery-big" data-action="toggle-gallery-big" class="ghost">大图标：关</button><button data-action="home" class="ghost">返回主页</button></div></div>
-      <div class="trait-legend panel"><span>每名角色都有符合人设的专属特性；部分效果会改变技能、隔间选择或整支队伍。</span><div id="gallery-state-toolbar" class="portrait-state-tabs" role="group" aria-label="全体头像状态"><button type="button" class="small ghost active" data-gallery-state="standard">标准</button><button type="button" class="small ghost" data-gallery-state="normal">普通</button><button type="button" class="small ghost" data-gallery-state="anxious">着急</button><button type="button" class="small ghost" data-gallery-state="extreme">极限</button><button type="button" class="small ghost" data-gallery-state="release">释放</button></div></div>
-      <div id="gallery-container" class="gallery-grid"></div>
-    </section>
+<!-- 地图 -->
+<div class="screen" id="map">
+  <div class="panel">
+    <h1 id="mapScene"></h1>
+    <p class="muted" id="mapNote"></p>
+    <div id="mapGraph"><svg id="mapEdges"></svg><div id="mapCols"></div></div>
+    <div id="moveBar" style="margin:12px 0;display:flex;gap:10px;flex-wrap:wrap"></div>
+    <p class="muted small" id="mapMoveHint"><b>实线免费，虚线基础消耗 1 点【体力】。</b>虚线可以通往另一出口，也可以在同列多经历一个节点；长路线通常能取得更多恢复、道具和忍民币。</p>
+  </div>
+</div>
 
-    <section id="screen-game" class="screen game-screen">
-      <header class="top-bar panel">
-        <div><span class="top-label">时间</span><strong id="game-time">00:00</strong></div>
-        <div><span class="top-label">得分</span><strong id="game-score">0</strong></div>
-        <div><span class="top-label">救援 / 失败</span><strong><i id="stat-success">0</i> / <i id="stat-fail">0</i></strong></div>
-        <div id="speed-controls" class="speed-controls" aria-label="显示时间与现实时间比例"><button data-speed="1" class="small" title="现实1秒等于游戏1秒">1:1</button><button data-speed="2" class="small" title="现实1秒等于游戏2秒">2:1</button><button data-speed="4" class="small active-speed" title="默认：现实1秒等于游戏4秒">普通 4:1</button><button data-speed="8" class="small" title="现实1秒等于游戏8秒">8:1</button><button data-speed="16" class="small" title="现实1秒等于游戏16秒">16:1</button><button id="btn-pause" data-action="pause" class="small">暂停</button></div>
-        <div class="game-view-actions"><button id="btn-game-big" data-action="toggle-game-big" class="small ghost">大图标：关</button><button id="btn-end-game" data-action="finish-or-abandon" class="small danger">放弃本局</button></div>
-      </header>
-      <div class="mission-bar panel"><span id="wave-status">第 1 波即将到达</span><div class="mission-progress"><i id="mission-progress-fill"></i></div><span id="combo-status">连救 ×0</span></div>
-      <div class="skill-bar panel">
-        <button data-skill="comfort" class="skill-button"><span>💗 全场安抚</span><small>全体等待者恢复10%</small><b id="skill-comfort-count">0</b></button>
-        <button data-skill="rush" class="skill-button"><span>📣 全体催促</span><small>所有隔间剩余时间 −10%</small><b id="skill-rush-count">0</b></button>
-        <button data-skill="focus" class="skill-button"><span>📋 全场疏导</span><small>持续1:00，自动救援≤3秒者</small><b id="skill-focus-count">0</b></button>
+<!-- 节点 -->
+<div class="screen" id="node">
+  <div class="panel">
+    <h1 id="nodeTitle"></h1>
+    <div id="timerWrap">
+      <div class="row" style="display:flex;justify-content:space-between;font-size:13px">
+        <span>思考时间</span><span id="timerV"></span>
       </div>
-      <div class="game-area">
-        <section class="queue-area panel">
-          <div class="area-title"><h3>等待队列</h3><div class="queue-title-actions"><span id="queue-count">0 人等待</span><button id="btn-urgency-sort" data-action="toggle-urgency-sort" class="small ghost">紧急度排序：关</button></div></div>
-          <div id="arrival-feed" class="arrival-feed"></div><div id="queue-container"></div><div id="queue-empty" class="empty-state">下一波角色还在赶来……</div>
-        </section>
-        <section class="stall-area panel"><div class="area-title"><h3>隔间状态</h3><span id="stall-hint">蹲厕省时，马桶加分</span></div><div id="stall-container" class="stall-grid"></div></section>
+      <div class="track"><i id="timerB"></i></div>
+      <div style="margin-top:7px;display:flex;align-items:center;gap:8px">
+        <button class="mini" id="focusTime">消耗 1 体力，延长 5 秒</button>
+        <span class="muted small">每个节点限用一次</span>
       </div>
-      <div id="toast" class="toast" role="status"></div>
-      <div id="pause-overlay" class="pause-overlay" hidden><div><h2>游戏已暂停</h2><button data-action="pause" class="primary">继续调度</button></div></div>
-    </section>
+    </div>
+    <div id="nodeText"></div>
+    <div id="nodeEntryEff"></div>
+    <div id="hintBox" style="display:none"></div>
+    <div id="choicePrep" style="display:none;margin:14px 0">
+      <button class="btn" id="beginChoice">读完了，开始选择</button>
+      <div class="muted small" style="margin-top:6px">点击后将显示选项并开始倒计时。</div>
+    </div>
+    <div id="options"></div>
+    <div class="result" id="result" style="display:none">
+      <div id="resultTag"></div>
+      <div id="resultText"></div>
+      <div id="resultEff"></div>
+      <p><button class="btn" id="nextBtn">继续</button></p>
+    </div>
+  </div>
+</div>
 
-    <section id="screen-result" class="screen">
-      <div class="result-card panel">
-        <p class="eyebrow">INCIDENT REPORT</p><div id="result-grade" class="result-grade">A</div><h2 id="res-title">事后报告</h2><p id="res-eval" class="result-eval"></p>
-        <div class="result-stats">
-          <div><span>最终得分</span><strong id="res-score">0</strong></div><div><span>总耗时</span><strong id="res-time">00:00</strong></div><div><span>成功救援</span><strong id="res-success">0</strong></div><div><span>不幸失败</span><strong id="res-fail">0</strong></div><div><span>平均等待</span><strong id="res-average">00:00</strong></div><div><span>最高连救</span><strong id="res-combo">0</strong></div>
-        </div>
-        <div id="result-challenges" class="result-challenges"></div>
-        <section class="result-cast-section">
-          <h3>角色事后评价</h3>
-          <p>她们会根据本局是否获救、入厕时机与隔间类型留下不同评价。</p>
-          <div id="result-character-comments" class="result-character-comments"></div>
-        </section>
-        <div class="form-actions"><button data-action="replay" class="primary">再来一次</button><button data-action="home" class="ghost">返回主页</button></div>
-      </div>
-    </section>
-  </main>
-  <script src="./game.js"></script>
+<!-- 结局 -->
+<div class="screen" id="end">
+  <div class="panel">
+    <div class="muted small" id="endKind" style="letter-spacing:4px"></div>
+    <h1 id="endTitle"></h1>
+    <div id="endText"></div>
+    <div id="endExtra" class="muted" style="margin-top:10px"></div>
+    <div id="endStats" class="muted small" style="margin-top:18px;border-top:1px dashed var(--line);padding-top:10px"></div>
+    <p style="margin-top:18px"><button class="btn" id="again">再来一次</button></p>
+  </div>
+</div>
+
+</div>
+
+<!-- 侧栏 HUD -->
+<div class="side" id="hud" style="display:none">
+  <div class="panel">
+    <div class="muted small" id="sceneV"></div>
+    <div class="muted small" id="outfitV"></div>
+    <div class="muted small" id="conditionV"></div>
+    <div class="row"><span>【忍耐】</span><span id="renV"></span></div>
+    <div class="track"><i id="renB"></i></div>
+    <div class="row"><span>【心情】</span><span id="moodV"></span></div>
+    <div class="track"><i id="moodB"></i></div>
+    <div class="row"><span>【体力】</span><span id="stamV"></span></div>
+    <div class="row"><span>忍民币</span><span id="coinV"></span></div>
+    <div class="muted small" style="margin-top:8px">负面状态</div>
+    <div id="debuffs"></div>
+  </div>
+  <div class="panel">
+    <div class="muted small">随身道具</div>
+    <div id="inv"></div>
+  </div>
+  <p><button class="mini" id="backTitle">放弃本局</button></p>
+</div>
+</div>
+
+<div id="toast"></div>
+<script src="data.js"></script>
+<script src="game.js"></script>
 </body>
 </html>
