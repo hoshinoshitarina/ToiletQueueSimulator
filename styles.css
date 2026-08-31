@@ -224,10 +224,8 @@ fieldset { border: 1px dashed #e994bb; border-radius: 12px; margin: 15px 0; }
 .stall-speech { position: relative; height: 58px; min-height: 58px; box-sizing: border-box; margin: 2px 3px 8px; padding: 7px 8px; border: 1px solid rgba(92,53,89,.22); border-radius: 10px; background: rgba(255,255,255,.92); color: #69425f; font-size: 10px; line-height: 1.35; text-align: left; overflow: visible; box-shadow: 0 2px 5px rgba(65,34,58,.1); }
 .stall-speech.empty { visibility: hidden; }
 .stall-speech::after { content: ''; position: absolute; left: 50%; bottom: -5px; width: 9px; height: 9px; background: #fff; border-right: 1px solid rgba(92,53,89,.22); border-bottom: 1px solid rgba(92,53,89,.22); transform: translateX(-50%) rotate(45deg); }
-.skill-bar { margin: 8px 0; padding: 7px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.skill-bar { margin: 8px 0; padding: 7px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
 .skill-button { position: relative; display: grid; text-align: left; padding: 7px 35px 7px 10px; }
-.skill-button.skill-active { outline: 3px solid #7b5de5; background: linear-gradient(#b99cf7, #7657d8); animation: skillGlow 1.2s ease-in-out infinite alternate; }
-@keyframes skillGlow { to { box-shadow: 0 0 15px rgba(108,78,211,.65); } }
 .skill-button small { font-size: 9px; opacity: .88; }
 .skill-button b { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); background: #fff; color: var(--pink-deep); width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; }
 .toast { pointer-events: none; position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 15px); opacity: 0; background: #3d2732; color: white; padding: 10px 17px; border-radius: 999px; z-index: 30; transition: .2s; }

@@ -3,7 +3,7 @@
 const SAVE_KEY = 'toiletQueueCrisisSaveV3';
 const LEGACY_SAVE_KEY = 'toiletQueueCrisisSaveV2';
 const TICK_MS = 50;
-const SKILL_LABELS = { comfort: '安抚', rush: '全体催促', focus: '全场疏导' };
+const SKILL_LABELS = { comfort: '安抚', rush: '催促' };
 const SKILL_DROP_CHANCES = { '从容入厕': .5, '及时救援': .6, '极限抢救': .7, '千钧一发': .825 };
 const ORIGINAL_BG = './img/background0.png';
 const LOCAL_HOSTS = new Set(['localhost', '0.0.0.0', '::1', '[::1]']);
@@ -779,7 +779,7 @@ function createRoster() {
   byId('girl-count').value = count;
   return shuffled(characters).slice(0, count);
 }
-function createWaveSchedule(roster, difficulty) {
+function createWaveSchedule(roster, difficulty, toiletCount) {
   const waveCount = roster.length < 7 ? 2 : 3;
   const waveSizes = Array(waveCount).fill(Math.floor(roster.length / waveCount));
   const waveOrder = shuffled(Array.from({ length: waveCount }, (_, index) => index));
@@ -803,13 +803,18 @@ function createWaveSchedule(roster, difficulty) {
   }
 
   const schedule = [];
-  const arrivalStep = 5.6 * difficulty.arrivalTime;
+  const peoplePerToilet = roster.length / Math.max(1, toiletCount);
+  const crowdPressure = clamp((peoplePerToilet - 4) / 8, 0, 1);
+  const arrivalStep = 5.6 * difficulty.arrivalTime * (1 + crowdPressure * .6);
+  const waveGapScale = 1 + crowdPressure * .5;
   let rosterIndex = 0;
   let waveStart = 0;
   waveSizes.forEach((size, wave) => {
-    if (wave > 0) waveStart += (size + 6) * difficulty.waveFactor;
+    if (wave > 0) waveStart += (size + 6) * difficulty.waveFactor * waveGapScale * (.9 + Math.random() * .25);
+    let arrivalTime = waveStart;
     for (let withinWave = 0; withinWave < size; withinWave++) {
-      schedule.push({ character: roster[rosterIndex++], wave: wave + 1, time: waveStart + withinWave * arrivalStep });
+      if (withinWave > 0) arrivalTime += arrivalStep * (.88 + Math.random() * .27);
+      schedule.push({ character: roster[rosterIndex++], wave: wave + 1, time: arrivalTime });
     }
   });
   return schedule;
@@ -831,11 +836,12 @@ function startGame() {
   const roster = createRoster();
   if (roster.length < 3) { showToast('至少选择 3 名角色'); return; }
   const difficulty = DIFFICULTIES[settings.difficulty] || DIFFICULTIES.normal;
+  const toilets = normalizeToilets(currentScene);
   game = {
-    elapsed: 0, speed: 4, paused: false, ended: false, queue: [], pending: createWaveSchedule(roster, difficulty), autoDispatchUntil: 0, urgencySort: Boolean(settings.defaultUrgencySort), bigIconMode: Boolean(settings.defaultBigIcons),
-    stalls: createStalls(normalizeToilets(currentScene)), total: roster.length, arrived: 0, currentWave: 0,
+    elapsed: 0, speed: 4, paused: false, ended: false, queue: [], pending: createWaveSchedule(roster, difficulty, toilets.squat + toilets.seated), urgencySort: Boolean(settings.defaultUrgencySort), bigIconMode: Boolean(settings.defaultBigIcons),
+    stalls: createStalls(toilets), total: roster.length, arrived: 0, currentWave: 0,
     stats: { success: 0, fail: 0, score: 0, combo: 0, maxCombo: 0, totalWait: 0, assignments: 0, criticalSaves: 0 },
-    skills: { comfort: 1, rush: 1, focus: 0 }, difficulty, challenges: getChallenges(), outcomes: [], timer: null
+    skills: { comfort: 1, rush: 1 }, difficulty, challenges: getChallenges(), outcomes: [], timer: null
   };
   byId('queue-container').replaceChildren();
   byId('stall-container').replaceChildren();
@@ -875,10 +881,8 @@ function updateGame() {
   const delta = (TICK_MS / 1000) * game.speed;
   game.elapsed += delta;
   while (game.pending.length && game.pending[0].time <= game.elapsed) addArrival(game.pending.shift());
-  autoDispatchCritical();
   updateQueue(delta);
   updateStalls(delta);
-  autoDispatchCritical();
   if (!game.pending.length && !game.queue.length && game.stalls.every(stall => !stall.occupant)) {
     finishGame();
     return;
@@ -962,18 +966,7 @@ function addOutcome(girl, success, details = {}) {
 function maybeGrantSkill(entryTier, patienceRatio) {
   const chance = entryTier === '千钧一发' && patienceRatio <= .05 ? 1 : (SKILL_DROP_CHANCES[entryTier] ?? .5);
   if (Math.random() >= chance) return null;
-  let skill;
-  if (game.skills.focus <= 0) {
-    skill = randomFrom(Object.keys(SKILL_LABELS));
-  } else {
-    const missingStandardSkills = ['comfort', 'rush'].filter(key => game.skills[key] <= 0);
-    if (missingStandardSkills.length) {
-      skill = randomFrom(missingStandardSkills);
-    } else {
-      const roll = Math.random();
-      skill = roll < .4 ? 'comfort' : roll < .8 ? 'rush' : 'focus';
-    }
-  }
+  const skill = randomFrom(Object.keys(SKILL_LABELS));
   game.skills[skill] += 1;
   return skill;
 }
@@ -1039,17 +1032,6 @@ function assignStall(characterId, toiletType) {
   renderGame();
 }
 
-function autoDispatchCritical() {
-  if (!game || game.paused || game.elapsed >= game.autoDispatchUntil) return;
-  while (true) {
-    const critical = [...game.queue].filter(girl => girl.patience <= 3).sort((a, b) => a.patience - b.patience)[0];
-    const freeStalls = game.stalls.filter(stall => !stall.occupant);
-    if (!critical || !freeStalls.length) return;
-    const chosen = freeStalls.sort((a, b) => getToiletDuration(critical, a.type) - getToiletDuration(critical, b.type))[0];
-    assignStall(critical.id, chosen.type);
-  }
-}
-
 function useSkill(skill) {
   if (!game || game.paused || game.skills[skill] <= 0) return;
   if (skill === 'comfort') {
@@ -1062,7 +1044,7 @@ function useSkill(skill) {
       girl.quote = withEmoji(COMFORT_DIALOGUES[girl.id] || '谢谢……感觉还能再坚持一下！', 'comfort');
       girl.nextQuote = Math.max(girl.nextQuote, game.elapsed + 24);
     });
-    showToast(`全场安抚生效：每人基础恢复最大忍耐的 ${Math.round(baseComfortRatio * 1000) / 10}%`);
+    showToast(`安抚生效：每人基础恢复最大忍耐的 ${Math.round(baseComfortRatio * 1000) / 10}%`);
   } else if (skill === 'rush') {
     const occupied = game.stalls.filter(stall => stall.occupant);
     if (!occupied.length) { showToast('没有可以催促进度的隔间'); return; }
@@ -1077,11 +1059,7 @@ function useSkill(skill) {
       stall.occupant.stallQuoteUntil = game.elapsed + 24;
       stall.occupant.nextStallQuote = Math.max(stall.occupant.nextStallQuote, game.elapsed + 24);
     });
-    showToast(`全体催促生效：每个隔间基础加速 ${Math.round(baseReduction * 1000) / 10}%`);
-  } else if (skill === 'focus') {
-    game.autoDispatchUntil = Math.max(game.autoDispatchUntil, game.elapsed) + 60;
-    showToast('全场疏导启动：1:00 内自动救援剩余 ≤3 秒者');
-    autoDispatchCritical();
+    showToast(`催促生效：每个隔间基础加速 ${Math.round(baseReduction * 1000) / 10}%`);
   } else return;
   game.skills[skill] -= 1;
   renderGame();
@@ -1100,7 +1078,7 @@ function renderGame() {
   byId('wave-status').textContent = game.pending.length ? `第 ${Math.max(1, game.currentWave)} 波 · 下批 ${formatTime(game.pending[0].time - game.elapsed)}` : '所有客流已到达';
   byId('mission-progress-fill').style.width = `${((game.stats.success + game.stats.fail) / game.total) * 100}%`;
   const occupiedCount = game.stalls.filter(stall => stall.occupant).length;
-  ['comfort', 'rush', 'focus'].forEach(skill => {
+  ['comfort', 'rush'].forEach(skill => {
     byId(`skill-${skill}-count`).textContent = game.skills[skill];
     const button = document.querySelector(`[data-skill="${skill}"]`);
     const hasTarget = skill === 'comfort' ? game.queue.length > 0 : skill === 'rush' ? occupiedCount > 0 : true;
@@ -1114,10 +1092,6 @@ function renderGame() {
   rushHint.textContent = occupiedCount
     ? `每间基础加速 ${Math.round((.1 + .3 / occupiedCount) * 1000) / 10}%`
     : '厕所无人，暂不可用';
-  const focusButton = document.querySelector('[data-skill="focus"]');
-  const focusActive = game.elapsed < game.autoDispatchUntil;
-  focusButton.classList.toggle('skill-active', focusActive);
-  focusButton.querySelector('small').textContent = focusActive ? `自动疏导剩余 ${formatTime(game.autoDispatchUntil - game.elapsed)}` : '持续1:00，自动救援≤3秒者';
   const sortButton = byId('btn-urgency-sort');
   sortButton.textContent = `紧急度排序：${game.urgencySort ? '开' : '关'}`;
   sortButton.classList.toggle('sort-active', game.urgencySort);
