@@ -249,6 +249,17 @@ function getAllImageAssets() {
   const backgrounds = Array.from({ length: 6 }, (_, id) => `./img/background${id}.png`);
   return [...backgrounds, ...portraits];
 }
+function getAllAudioAssets() { return Object.values(AUDIO_FILES).flat(); }
+async function preloadAudioAsset(url) {
+  try {
+    const response = await fetch(url, { cache: 'force-cache' });
+    if (!response.ok) return false;
+    await response.arrayBuffer();
+    return true;
+  } catch {
+    return false;
+  }
+}
 async function initializeWebThumbnails() {
   const button = byId('btn-open-scenes');
   const status = byId('asset-init-status');
@@ -280,13 +291,36 @@ async function initializeWebThumbnails() {
     }
   };
   await Promise.all(Array.from({ length: 6 }, worker));
+  const imageMissing = missing;
+  const audioAssets = getAllAudioAssets();
+  cursor = 0;
+  completed = 0;
+  missing = 0;
+  const updateAudioProgress = () => {
+    const percent = Math.round(completed / audioAssets.length * 100);
+    button.textContent = `预载音频 ${percent}%`;
+    status.textContent = `正在预载约 1.5MB 的游戏音频……${completed}/${audioAssets.length}`;
+  };
+  updateAudioProgress();
+  const audioWorker = async () => {
+    while (cursor < audioAssets.length) {
+      const url = audioAssets[cursor++];
+      if (!await preloadAudioAsset(url)) missing += 1;
+      completed += 1;
+      updateAudioProgress();
+    }
+  };
+  await Promise.all(Array.from({ length: 6 }, audioWorker));
+  const audioMissing = missing;
   webThumbnailsReady = true;
   button.disabled = false;
   button.textContent = '开始游戏';
-  status.textContent = missing ? `轻量资源初始化完成 · ${missing} 张资源未能载入` : '轻量图片已就绪 · 约 6MB';
+  status.textContent = imageMissing || audioMissing
+    ? `资源初始化完成 · 图片缺失 ${imageMissing} · 音频缺失 ${audioMissing}`
+    : '轻量图片与游戏音频已就绪 · 约 7.5MB';
 }
 function openScenes() {
-  if (!webThumbnailsReady) { showToast('轻量图片仍在初始化，请稍候'); return; }
+  if (!webThumbnailsReady) { showToast('游戏资源仍在初始化，请稍候'); return; }
   renderSceneButtons();
   showScreen('screen-scene');
 }
@@ -337,11 +371,17 @@ async function toggleOriginalAssets() {
   showToast(missing ? `已启用原图，${missing} 张缺失资源使用缩略图` : '高清原图已加载并启用');
 }
 function bindImmediateButton(button, action) {
-  button.addEventListener('click', () => {
-    const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches;
+  button.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || button.disabled) return;
+    const coarsePointer = event.pointerType === 'touch' || window.matchMedia?.('(pointer: coarse)').matches;
     const now = performance.now();
     if (coarsePointer && now - lastCoarseAssignmentAt < 400) return;
     if (coarsePointer) lastCoarseAssignmentAt = now;
+    event.preventDefault();
+    action();
+  });
+  button.addEventListener('click', event => {
+    if (event.detail !== 0 || button.disabled) return;
     action();
   });
 }
