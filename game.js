@@ -30,9 +30,9 @@ const BUILTIN_SCENES = [
 ];
 
 const DIFFICULTIES = {
-  casual: { name: '轻松', patience: 1.4, decay: 1, arrivalTime: 1.2, waveFactor: 6, score: .75 },
+  casual: { name: '轻松', patience: 1.25, decay: 1, arrivalTime: 1.2, waveFactor: 6, score: .75 },
   normal: { name: '标准', patience: 1, decay: 1, arrivalTime: 1, waveFactor: 5, score: 1 },
-  crisis: { name: '危机', patience: .6, decay: 1, arrivalTime: .8, waveFactor: 4, score: 1.5 }
+  crisis: { name: '危机', patience: .8, decay: 1, arrivalTime: .8, waveFactor: 4, score: 1.5 }
 };
 
 const TRAITS = [
@@ -419,6 +419,13 @@ function formatTime(seconds) {
   const safe = Math.max(0, Math.ceil(seconds));
   return `${String(Math.floor(safe / 60)).padStart(2, '0')}:${String(safe % 60).padStart(2, '0')}`;
 }
+function normalizeCustomScene(scene) {
+  return {
+    ...scene,
+    toilets: normalizeToilets(scene),
+    desc: String(scene?.desc || '').replace(/^【自定义事故】/, '【事故原因】')
+  };
+}
 function loadSave() {
   try {
     const currentRaw = localStorage.getItem(SAVE_KEY);
@@ -434,7 +441,7 @@ function loadSave() {
     }
     return {
       settings: { ...DEFAULT_SAVE.settings, ...(raw?.settings || {}) },
-      customScenes: Array.isArray(raw?.customScenes) ? raw.customScenes.map(scene => ({ ...scene, toilets: normalizeToilets(scene) })) : [],
+      customScenes: Array.isArray(raw?.customScenes) ? raw.customScenes.map(normalizeCustomScene) : [],
       characterOverrides: overrides,
       selectedVictims: Array.isArray(raw?.selectedVictims) ? raw.selectedVictims : [],
       records: raw?.records || {}
@@ -643,7 +650,7 @@ function applyCustomScene(event) {
   }
   byId('cust-squat').value = squat;
   byId('cust-seated').value = seated;
-  const scene = { id: `custom_${Date.now()}`, name: title, toilets: { squat, seated }, defaultCount: clamp((squat + seated) * 4, 3, 20), desc: `【自定义事故】${desc}`, isCustom: true, bg: selectedBg };
+  const scene = { id: `custom_${Date.now()}`, name: title, toilets: { squat, seated }, defaultCount: clamp((squat + seated) * 4, 3, 20), desc: `【事故原因】${desc}`, isCustom: true, bg: selectedBg };
   scenes.push(scene);
   persist();
   toggleCustomForm(false);
@@ -908,8 +915,9 @@ function updateQueue(delta) {
       const dialogue = getDialogue(girl);
       girl.quote = withEmoji(randomFrom(ratio < .35 ? dialogue.urgent : dialogue.waiting), ratio < .35 ? 'urgent' : 'waiting');
       girl.nextQuote = game.elapsed + (ratio < .35 ? 14 : 28) + Math.random() * 20;
-      if (ratio < .35) playSound(Math.random() < .22 ? 'fart' : 'belly');
     }
+    const queueSoundRate = ratio < .15 ? .024 : ratio < .35 ? .016 : ratio < .62 ? .008 : .0025;
+    if (Math.random() < queueSoundRate * delta) playSound(Math.random() < .18 ? 'fart' : 'belly');
     if (girl.patience <= 0) {
       game.queue.splice(index, 1);
       addOutcome(girl, false, { reason: '等待超时' });
@@ -990,7 +998,7 @@ function rescueOccupant(stall) {
   game.stats.combo += 1;
   game.stats.maxCombo = Math.max(game.stats.maxCombo, game.stats.combo);
   if (patienceRatio < .35) game.stats.criticalSaves += 1;
-  const scoreBeforeExtra = 100 + patienceRatio * 100 + game.stats.combo * 12;
+  const scoreBeforeExtra = 150 + patienceRatio * 50 + game.stats.combo * 10;
   const extraScore = getExtraScore(girl, stall.type, patienceRatio);
   const baseScore = scoreBeforeExtra + extraScore;
   const facilityMultiplier = 5 / Math.max(1, game.stalls.length);
@@ -1275,7 +1283,7 @@ async function importSaveFile(file) {
     const imported = payload.save;
     saveData = {
       settings: { ...DEFAULT_SAVE.settings, ...(imported.settings || {}) },
-      customScenes: Array.isArray(imported.customScenes) ? imported.customScenes.map(scene => ({ ...scene, toilets: normalizeToilets(scene) })) : [],
+      customScenes: Array.isArray(imported.customScenes) ? imported.customScenes.map(normalizeCustomScene) : [],
       characterOverrides: imported.characterOverrides || {},
       selectedVictims: Array.isArray(imported.selectedVictims) ? imported.selectedVictims.filter(id => Number.isInteger(id) && id >= 0 && id < 20) : [],
       records: imported.records || {}
