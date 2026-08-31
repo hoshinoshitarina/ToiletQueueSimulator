@@ -162,6 +162,9 @@ fieldset { border: 1px dashed #e994bb; border-radius: 12px; margin: 15px 0; }
 .select-grid .gallery-item.selected { border: 4px solid var(--green); background: #effff6; transform: scale(.98); }
 .select-grid .selection-ability { display: block; margin-top: 6px; color: #7651a8; line-height: 1.45; }
 .selection-toolbar { max-width: 1050px; margin: 0 auto 10px; padding: 9px 13px; display: flex; justify-content: space-between; align-items: center; }
+.selection-random-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+.selection-random-controls label { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 12px; }
+.selection-random-controls input { width: 62px; padding: 5px 7px; }
 #screen-select-victims > .wide { max-width: 1050px; display: block; margin: 12px auto 0; }
 
 .game-screen { padding: 8px; background-attachment: local; }
@@ -305,19 +308,47 @@ fieldset { border: 1px dashed #e994bb; border-radius: 12px; margin: 15px 0; }
   .game-area { height: auto; min-height: 0; grid-template-columns: 1fr; grid-template-rows: minmax(0, 1.08fr) minmax(0, .92fr); overflow: hidden; }
   .queue-area, .stall-area { max-height: none; padding: 7px; }
   .queue-title-actions { align-items: flex-end; flex-direction: column; gap: 3px; }
-  .stall-grid { grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); }
-  .stall-grid { grid-auto-rows: 232px; }
-  .girl-card { padding: 7px; }
-  .dialogue { margin: 0 3px 5px 18px; padding: 6px 8px; min-height: 29px; }
-  .card-top { display: grid; grid-template-columns: 78px minmax(0, 1fr); align-items: center; gap: 7px; }
-  .card-top .girl-avatar { width: 76px; height: 76px; flex-basis: 76px; transform: none; margin: 0; }
-  .assign-actions { grid-column: 1 / -1; width: 100%; flex-basis: auto; }
+  .selection-toolbar { gap: 7px; flex-wrap: wrap; }
+  .selection-random-controls { flex: 1 1 260px; }
+  .gallery-grid.big-icon-mode .gallery-header { grid-template-columns: 120px minmax(0, 1fr); gap: 10px; align-items: center; }
+  .gallery-grid.big-icon-mode .girl-avatar { width: 120px; height: 120px; aspect-ratio: auto; border-radius: 20px; }
+  .stall-grid { grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); grid-auto-rows: 210px; gap: 6px; }
+  .stall { padding: 5px; border-width: 2px; }
+  .stall-status { font-size: 8px; }
+  .entry-tier { margin: 3px auto; padding: 2px 5px; font-size: 8px; }
+  .stall-speech { height: 36px; min-height: 36px; margin: 1px 1px 5px; padding: 4px 5px; font-size: 8px; line-height: 1.25; overflow: hidden; }
+  .stall-character img { width: 60px; height: 60px; border-width: 2px; border-radius: 13px; }
+  .stall-name { margin-top: 1px; font-size: 9px; }
+  .stall-timer { flex: 0 0 auto; margin-top: 3px; padding: 3px; font-size: 10px; }
+  .game-screen:not(.big-icon-mode) .girl-card { display: grid; grid-template-columns: 64px minmax(0, 1fr); grid-template-rows: auto auto auto; column-gap: 5px; row-gap: 2px; padding: 5px; margin-bottom: 5px; }
+  .game-screen:not(.big-icon-mode) .girl-card .dialogue { grid-column: 2; grid-row: 1; z-index: 1; margin: 0; padding: 4px 6px; min-height: 24px; font-size: 9px; line-height: 1.25; }
+  .game-screen:not(.big-icon-mode) .girl-card .dialogue::before { left: -6px; top: 8px; width: 10px; height: 10px; }
+  .game-screen:not(.big-icon-mode) .girl-card .card-top { display: contents; }
+  .game-screen:not(.big-icon-mode) .girl-card .card-top .girl-avatar { grid-column: 1; grid-row: 1 / 3; align-self: start; width: 64px; height: 64px; flex-basis: 64px; margin: 0; transform: none; border-radius: 13px; }
+  .game-screen:not(.big-icon-mode) .girl-card .girl-info { grid-column: 2; grid-row: 2; min-width: 0; }
+  .game-screen:not(.big-icon-mode) .girl-card .assign-actions { grid-column: 1 / 3; grid-row: 3; width: 100%; gap: 4px; }
+  .girl-name-row { gap: 3px; }
+  .girl-name-row strong { font-size: 13px; }
+  .trait-chip { padding: 2px 5px; font-size: 8px; }
+  .trait-inline-desc { min-width: 0; font-size: 8px; line-height: 1.2; }
+  .girl-meta { margin-top: 2px; font-size: 8px; }
+  .bar-bg { height: 6px; margin-top: 3px; }
+  .assign-button { padding: 4px 3px; font-size: 9px; box-shadow: 0 2px 0 #176e69; }
+  .game-screen.big-icon-mode #queue-container { display: block; }
+  .game-screen.big-icon-mode .girl-card { display: grid; grid-template-columns: 108px minmax(0, 1fr); grid-template-rows: auto auto auto; column-gap: 6px; row-gap: 2px; padding: 6px; margin: 0 0 6px; }
+  .game-screen.big-icon-mode .girl-card .dialogue { grid-column: 2; grid-row: 1; z-index: 1; margin: 0; padding: 4px 6px; min-height: 24px; font-size: 9px; line-height: 1.25; }
+  .game-screen.big-icon-mode .girl-card .dialogue::before { left: -6px; top: 8px; width: 10px; height: 10px; }
+  .game-screen.big-icon-mode .girl-card .card-top { display: contents; }
+  .game-screen.big-icon-mode .girl-card .card-top .girl-avatar { grid-column: 1; grid-row: 1 / 4; align-self: start; width: 108px; height: 108px; aspect-ratio: auto; margin: 0; border-radius: 18px; }
+  .game-screen.big-icon-mode .girl-card .girl-info { grid-column: 2; grid-row: 2; min-width: 0; }
+  .game-screen.big-icon-mode .girl-card .assign-actions { grid-column: 2; grid-row: 3; width: 100%; gap: 3px; }
+  .game-screen.big-icon-mode .stall-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); grid-auto-rows: 225px; }
+  .game-screen.big-icon-mode .stall-character img { width: 76px; height: 76px; border-radius: 16px; }
   .skill-button { padding: 7px 26px 7px 6px; }
   .skill-button span { font-size: 11px; }
   .skill-button small { display: none; }
   .result-stats { grid-template-columns: repeat(2, 1fr); }
   .result-character-comments { grid-template-columns: 1fr; }
-  .game-screen.big-icon-mode .card-top { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 430px) {
@@ -326,12 +357,15 @@ fieldset { border: 1px dashed #e994bb; border-radius: 12px; margin: 15px 0; }
   .setting-row { align-items: flex-start; }
   .gallery-grid { grid-template-columns: 1fr; }
   .scene-grid { grid-template-columns: repeat(2, 1fr); }
-  .girl-avatar { flex-basis: 68px; width: 68px; height: 68px; border-radius: 15px; }
-  .assign-button { padding: 7px; }
-  .assign-actions { flex-basis: 112px; }
+  .girl-avatar { flex-basis: 58px; width: 58px; height: 58px; border-radius: 13px; }
+  .gallery-grid.big-icon-mode .gallery-header { grid-template-columns: 104px minmax(0, 1fr); }
+  .gallery-grid.big-icon-mode .girl-avatar { width: 104px; height: 104px; border-radius: 17px; }
+  .game-screen:not(.big-icon-mode) .girl-card { grid-template-columns: 58px minmax(0, 1fr); }
+  .game-screen:not(.big-icon-mode) .girl-card .card-top .girl-avatar { width: 58px; height: 58px; flex-basis: 58px; }
+  .game-screen.big-icon-mode .girl-card { grid-template-columns: 96px minmax(0, 1fr); }
+  .game-screen.big-icon-mode .girl-card .card-top .girl-avatar { width: 96px; height: 96px; }
   .portrait-state-tabs { grid-template-columns: repeat(5, minmax(48px, 1fr)); width: 100%; overflow-x: auto; }
   .game-screen.big-icon-mode .game-area { grid-template-columns: 1fr; }
-  .game-screen.big-icon-mode #queue-container { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

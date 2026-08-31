@@ -37,16 +37,16 @@ const DIFFICULTIES = {
 
 const TRAITS = [
   { id: 'brave_face', name: '形象包袱', icon: '💄', desc: '忍耐高于40%时消耗降低15%，低于40%后消耗加快35%' },
-  { id: 'discipline', name: '从容表率', icon: '📏', desc: '忍耐度≥70%入厕时额外得分+50；无其他强化' },
+  { id: 'discipline', name: '从容表率', icon: '📏', desc: '忍耐度≥70%入厕时额外得分+50' },
   { id: 'newcomer', name: '及时接应', icon: '🧳', desc: '到场前1分钟消耗加快；忍耐度≥65%入厕额外+45' },
-  { id: 'professional', name: '职业从容', icon: '🎀', desc: '忍耐度≥75%入厕时额外得分+55；无其他强化' },
+  { id: 'professional', name: '职业从容', icon: '🎀', desc: '忍耐度≥75%入厕时额外得分+55' },
   { id: 'coser', name: '繁复衣装', icon: '👗', desc: '安排马桶额外+70，安排蹲厕额外−35' },
   { id: 'homebody', name: '独处安心', icon: '🏠', desc: '队伍只剩3人以内时，忍耐消耗降低35%' },
   { id: 'rebel', name: '越催越快', icon: '🔥', desc: '她在隔间时，“催促”的推进量翻倍' },
   { id: 'reader', name: '沉浸阅读', icon: '📖', desc: '每等待2分钟会专注阅读，暂停自身消耗30秒' },
-  { id: 'runner', name: '蹲姿冲刺', icon: '🏃', desc: '安排蹲厕额外得分+40，安排马桶无修正' },
+  { id: 'runner', name: '蹲姿冲刺', icon: '🏃', desc: '安排蹲厕额外得分+40' },
   { id: 'nervous', name: '人群紧张', icon: '😰', desc: '队伍超过5人时消耗加快30%，人数较少时降低20%' },
-  { id: 'lady', name: '洁癖千金', icon: '✨', desc: '安排马桶追加结算前基础分的20%，最高+80；蹲厕不扣分' },
+  { id: 'lady', name: '洁癖千金', icon: '✨', desc: '安排马桶追加结算前基础分的20%，最高+80' },
   { id: 'miko', name: '和服层叠', icon: '⛩️', desc: '安排马桶额外+80，安排蹲厕额外−45' },
   { id: 'potion', name: '魔药波动', icon: '🧪', desc: '忍耐消耗每30秒在降低35%与加快45%之间切换' },
   { id: 'dignity', name: '教师定力', icon: '👓', desc: '忍耐低于35%后冷静应对，忍耐消耗降低35%' },
@@ -54,8 +54,8 @@ const TRAITS = [
   { id: 'programmer', name: '紧急备份', icon: '💻', desc: '首次跌至20%时自动恢复90秒忍耐' },
   { id: 'apprentice', name: '笨拙加速', icon: '🍰', desc: '她在隔间时，催促额外推进50%' },
   { id: 'captain', name: '队长鼓舞', icon: '⚾', desc: '只要她仍在队伍，其他人的消耗降低10%' },
-  { id: 'princess', name: '公主礼遇', icon: '👑', desc: '安排马桶追加结算前基础分的25%，最高+90；蹲厕不扣分' },
-  { id: 'biker', name: '蹲姿老练', icon: '🏍️', desc: '安排蹲厕额外得分+50，安排马桶无修正' }
+  { id: 'princess', name: '公主礼遇', icon: '👑', desc: '安排马桶追加结算前基础分的25%，最高+90' },
+  { id: 'biker', name: '蹲姿老练', icon: '🏍️', desc: '安排蹲厕额外得分+50' }
 ];
 
 const NAMES = ['星奈', '紬', '柚葉', '琴音', '涼風', '奈緒', '真白', '結月', '千夏', '莉子', '詩織', '瑞希', '日鞠', '凛音', '沙耶', '千寻', '美波', '芽衣', '亚里沙', '初雪'];
@@ -192,6 +192,7 @@ let galleryBigMode = false;
 let galleryState = 'standard';
 let originalAssetsLoading = false;
 let webThumbnailsReady = IS_LOCAL_RUNTIME;
+let lastCoarseAssignmentAt = 0;
 
 function byId(id) { return document.getElementById(id); }
 function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
@@ -336,18 +337,11 @@ async function toggleOriginalAssets() {
   showToast(missing ? `已启用原图，${missing} 张缺失资源使用缩略图` : '高清原图已加载并启用');
 }
 function bindImmediateButton(button, action) {
-  let handledByPointer = false;
-  button.addEventListener('pointerdown', event => {
-    if (event.button !== 0 || button.disabled) return;
-    handledByPointer = true;
-    event.preventDefault();
-    action();
-  });
   button.addEventListener('click', () => {
-    if (handledByPointer) {
-      handledByPointer = false;
-      return;
-    }
+    const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches;
+    const now = performance.now();
+    if (coarsePointer && now - lastCoarseAssignmentAt < 400) return;
+    if (coarsePointer) lastCoarseAssignmentAt = now;
     action();
   });
 }
@@ -714,6 +708,14 @@ function toggleVictim(id) {
   const index = selectedVictims.indexOf(id);
   if (index >= 0) selectedVictims.splice(index, 1);
   else if (selectedVictims.length < 20) selectedVictims.push(id);
+  persist();
+  renderVictimSelection();
+}
+function selectRandomVictims() {
+  const input = byId('random-victim-count');
+  const count = clamp(Math.round(Number(input.value) || 8), 3, characters.length);
+  input.value = count;
+  selectedVictims = shuffled(characters).slice(0, count).map(item => item.id);
   persist();
   renderVictimSelection();
 }
@@ -1321,7 +1323,7 @@ document.addEventListener('click', event => {
       'start-flow': beginStartFlow,
       'delete-scene': deleteCurrentScene,
       'back-scenes': () => showScreen('screen-scene'),
-      'select-random': () => { selectedVictims = shuffled(characters).slice(0, 8).map(item => item.id); persist(); renderVictimSelection(); },
+      'select-random': selectRandomVictims,
       'clear-selection': () => { selectedVictims = []; persist(); renderVictimSelection(); },
       'start-game': startGame,
       'toggle-gallery-big': toggleGalleryBigMode,
