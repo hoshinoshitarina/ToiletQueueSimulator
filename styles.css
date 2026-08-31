@@ -228,6 +228,7 @@ fieldset { border: 1px dashed #e994bb; border-radius: 12px; margin: 15px 0; }
 .skill-button { position: relative; display: grid; text-align: left; padding: 7px 35px 7px 10px; }
 .skill-button small { font-size: 9px; opacity: .88; }
 .skill-button b { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); background: #fff; color: var(--pink-deep); width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; }
+.mobile-section-tabs { display: none; }
 .toast { pointer-events: none; position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 15px); opacity: 0; background: #3d2732; color: white; padding: 10px 17px; border-radius: 999px; z-index: 30; transition: .2s; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .pause-overlay { position: absolute; inset: 0; z-index: 20; background: rgba(45,25,35,.66); display: grid; place-items: center; }
@@ -293,33 +294,39 @@ fieldset { border: 1px dashed #e994bb; border-radius: 12px; margin: 15px 0; }
   .form-grid { grid-template-columns: 1fr; }
   .help-grid { grid-template-columns: 1fr; }
   .save-file-box { align-items: stretch; flex-direction: column; }
-  .game-screen { padding: 5px; }
+  .game-screen { padding: 5px; padding-bottom: calc(5px + env(safe-area-inset-bottom)); }
   .game-screen.active { grid-template-rows: auto auto auto minmax(0, 1fr); }
   .top-bar { padding: 6px 7px; gap: 5px; display: grid; grid-template-columns: repeat(3, 1fr); font-size: 12px; }
   .top-bar > div:not(.speed-controls) { min-width: 0; }
   .top-bar .speed-controls { grid-column: 1 / -1; grid-row: 2; gap: 3px; }
-  .speed-controls button { padding: 6px 8px; font-size: 11px; }
+  .speed-controls button { min-height: 36px; padding: 6px 8px; font-size: 11px; }
   .top-bar > div.game-view-actions { grid-column: 1 / -1; grid-row: 3; justify-self: stretch; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .top-bar > div.game-view-actions button { min-height: 38px; }
   .mission-bar { margin: 5px 0; padding: 5px 8px; grid-template-columns: 1fr auto; gap: 6px; }
   .mission-progress { grid-column: 1 / -1; grid-row: 2; }
   .skill-bar { margin: 0 0 5px; padding: 5px; gap: 4px; }
-  .game-area { height: auto; min-height: 0; grid-template-columns: 1fr; grid-template-rows: minmax(0, 1.08fr) minmax(0, .92fr); overflow: hidden; }
-  .queue-area, .stall-area { max-height: none; padding: 7px; }
+  .skill-button { min-height: 44px; }
+  .game-area { height: auto; min-height: 0; grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); gap: 5px; overflow: hidden; }
+  .mobile-section-tabs { grid-column: 1; grid-row: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 5px; }
+  .mobile-section-tabs button { min-height: 40px; padding: 7px 10px; background: rgba(255,255,255,.88); color: var(--pink-deep); box-shadow: 0 2px 0 #ffc2dc; }
+  .mobile-section-tabs button.active { color: #fff; background: linear-gradient(#a97ff2, #7250cf); border-color: #6946bd; box-shadow: 0 2px 0 #4e3494; }
+  .queue-area, .stall-area { grid-column: 1; grid-row: 2; height: 100%; max-height: none; padding: 8px; }
+  .game-area[data-mobile-view="queue"] .stall-area, .game-area[data-mobile-view="stalls"] .queue-area { display: none; }
   .queue-title-actions { align-items: flex-end; flex-direction: column; gap: 3px; }
   .selection-toolbar { gap: 7px; flex-wrap: wrap; }
   .selection-random-controls { flex: 1 1 260px; }
   .gallery-grid.big-icon-mode .gallery-header { grid-template-columns: 120px minmax(0, 1fr); gap: 10px; align-items: center; }
   .gallery-grid.big-icon-mode .girl-avatar { width: 120px; height: 120px; aspect-ratio: auto; border-radius: 20px; }
-  .stall-grid { grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); grid-auto-rows: 210px; gap: 6px; }
-  .stall { padding: 5px; border-width: 2px; }
-  .stall-status { font-size: 8px; }
-  .entry-tier { margin: 3px auto; padding: 2px 5px; font-size: 8px; }
-  .stall-speech { height: 36px; min-height: 36px; margin: 1px 1px 5px; padding: 4px 5px; font-size: 8px; line-height: 1.25; overflow: hidden; }
-  .stall-character img { width: 60px; height: 60px; border-width: 2px; border-radius: 13px; }
-  .stall-name { margin-top: 1px; font-size: 9px; }
-  .stall-timer { flex: 0 0 auto; margin-top: 3px; padding: 3px; font-size: 10px; }
+  .stall-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); grid-auto-rows: 245px; gap: 7px; }
+  .stall { padding: 7px; border-width: 2px; }
+  .stall-status { font-size: 10px; }
+  .entry-tier { margin: 4px auto; padding: 3px 6px; font-size: 9px; }
+  .stall-speech { height: 45px; min-height: 45px; margin: 2px 2px 6px; padding: 6px 7px; font-size: 10px; line-height: 1.3; overflow: hidden; }
+  .stall-character img { width: 72px; height: 72px; border-width: 2px; border-radius: 14px; }
+  .stall-name { margin-top: 2px; font-size: 11px; }
+  .stall-timer { flex: 0 0 auto; margin-top: 4px; padding: 4px; font-size: 11px; }
   .game-screen:not(.big-icon-mode) .girl-card { display: grid; grid-template-columns: 64px minmax(0, 1fr); grid-template-rows: auto auto auto; column-gap: 5px; row-gap: 2px; padding: 5px; margin-bottom: 5px; }
-  .game-screen:not(.big-icon-mode) .girl-card .dialogue { grid-column: 2; grid-row: 1; z-index: 1; margin: 0; padding: 4px 6px; min-height: 24px; font-size: 9px; line-height: 1.25; }
+  .game-screen:not(.big-icon-mode) .girl-card .dialogue { grid-column: 2; grid-row: 1; z-index: 1; margin: 0; padding: 5px 7px; min-height: 30px; font-size: 10px; line-height: 1.3; overflow: hidden; }
   .game-screen:not(.big-icon-mode) .girl-card .dialogue::before { left: -6px; top: 8px; width: 10px; height: 10px; }
   .game-screen:not(.big-icon-mode) .girl-card .card-top { display: contents; }
   .game-screen:not(.big-icon-mode) .girl-card .card-top .girl-avatar { grid-column: 1; grid-row: 1 / 3; align-self: start; width: 64px; height: 64px; flex-basis: 64px; margin: 0; transform: none; border-radius: 13px; }
@@ -327,21 +334,21 @@ fieldset { border: 1px dashed #e994bb; border-radius: 12px; margin: 15px 0; }
   .game-screen:not(.big-icon-mode) .girl-card .assign-actions { grid-column: 1 / 3; grid-row: 3; width: 100%; gap: 4px; }
   .girl-name-row { gap: 3px; }
   .girl-name-row strong { font-size: 13px; }
-  .trait-chip { padding: 2px 5px; font-size: 8px; }
-  .trait-inline-desc { min-width: 0; font-size: 8px; line-height: 1.2; }
-  .girl-meta { margin-top: 2px; font-size: 8px; }
-  .bar-bg { height: 6px; margin-top: 3px; }
-  .assign-button { padding: 4px 3px; font-size: 9px; box-shadow: 0 2px 0 #176e69; }
+  .trait-chip { padding: 2px 5px; font-size: 9px; }
+  .trait-inline-desc { display: none; }
+  .girl-meta { margin-top: 3px; font-size: 10px; }
+  .bar-bg { height: 7px; margin-top: 4px; }
+  .assign-button { min-height: 40px; padding: 7px 4px; font-size: 11px; box-shadow: 0 2px 0 #176e69; }
   .game-screen.big-icon-mode #queue-container { display: block; }
   .game-screen.big-icon-mode .girl-card { display: grid; grid-template-columns: 108px minmax(0, 1fr); grid-template-rows: auto auto auto; column-gap: 6px; row-gap: 2px; padding: 6px; margin: 0 0 6px; }
-  .game-screen.big-icon-mode .girl-card .dialogue { grid-column: 2; grid-row: 1; z-index: 1; margin: 0; padding: 4px 6px; min-height: 24px; font-size: 9px; line-height: 1.25; }
+  .game-screen.big-icon-mode .girl-card .dialogue { grid-column: 2; grid-row: 1; z-index: 1; margin: 0; padding: 5px 7px; min-height: 30px; font-size: 10px; line-height: 1.3; overflow: hidden; }
   .game-screen.big-icon-mode .girl-card .dialogue::before { left: -6px; top: 8px; width: 10px; height: 10px; }
   .game-screen.big-icon-mode .girl-card .card-top { display: contents; }
   .game-screen.big-icon-mode .girl-card .card-top .girl-avatar { grid-column: 1; grid-row: 1 / 4; align-self: start; width: 108px; height: 108px; aspect-ratio: auto; margin: 0; border-radius: 18px; }
   .game-screen.big-icon-mode .girl-card .girl-info { grid-column: 2; grid-row: 2; min-width: 0; }
   .game-screen.big-icon-mode .girl-card .assign-actions { grid-column: 2; grid-row: 3; width: 100%; gap: 3px; }
-  .game-screen.big-icon-mode .stall-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); grid-auto-rows: 225px; }
-  .game-screen.big-icon-mode .stall-character img { width: 76px; height: 76px; border-radius: 16px; }
+  .game-screen.big-icon-mode .stall-grid { grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); grid-auto-rows: 260px; }
+  .game-screen.big-icon-mode .stall-character img { width: 86px; height: 86px; border-radius: 17px; }
   .skill-button { padding: 7px 26px 7px 6px; }
   .skill-button span { font-size: 11px; }
   .skill-button small { display: none; }

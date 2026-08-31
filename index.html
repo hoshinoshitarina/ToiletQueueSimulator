@@ -40,7 +40,7 @@
           <section><h3>基础得分公式</h3><div class="formula">单人得分 = (150 + 忍耐度×50 + 当前连救×10 + 额外得分) × 隔间倍率 × 难度倍率 × 场景倍率</div><p>忍耐度 = 入厕时剩余忍耐比例，因此越早安排，基础分越高；越晚安排则会提高道具掉落率。马桶倍率为1.3，蹲厕为1。难度倍率：轻松0.75、标准1、危机1.5。场景倍率 = 5 ÷ 厕所总数，用来抵消多厕所场景天然拥有的得分优势。</p><p class="example">例：标准难度、5个厕所、剩余忍耐70%、3连救、无额外得分并使用马桶：<br>(150 + 35 + 30) × 1.3 × (5 ÷ 5) ≈ 280分。</p></section>
           <section><h3>角色额外得分</h3><ul><li>莉子：忍耐度≥65%时 +60，但队伍超过5人时消耗加快30%</li><li>日鞠：忍耐度≥65%时 +60，但消耗速度会随魔药周期波动</li><li>涼風：马桶 +70，蹲厕 −35</li><li>瑞希：马桶 +80，蹲厕 −45</li><li>詩織：使用马桶时，额外得分 = 当前忍耐度×100</li><li>亚里沙：使用马桶时，额外得分 = 当前忍耐度×100</li><li>千夏：蹲厕 +65</li><li>初雪：蹲厕 +80</li></ul><p>额外得分会先计入括号，再统一计算隔间、难度与场景倍率。成功救援会让连救数 +1，每层连救增加10点。</p></section>
           <section><h3>技能获得与效果</h3><ul><li><b>开局库存：</b>安抚×1、催促×1。</li><li><b>技能掉落：</b>成功救援后可能随机获得安抚或催促；入厕时越接近极限，获得技能的机会越高。</li><li><b>安抚：</b>恢复所有等待者的忍耐，并触发各自的专属回应；排队区无人时不可使用。</li><li><b>催促：</b>推进所有使用中隔间的进度，并触发各自的专属回应；厕所无人时不可使用。</li></ul><p>技能效果会根据当前人数自动调整，部分角色特性也会强化对应技能。</p></section>
-          <section><h3>结算评级</h3><ul><li><b>S：</b>全员获救、三个挑战全完成，且平均每人得分≥185。</li><li><b>A：</b>成功率≥90%，且平均每人得分≥145。</li><li><b>B：</b>成功率≥72%。</li><li><b>C：</b>成功率≥50%。</li><li><b>D：</b>成功率不足50%。</li></ul><p>场景挑战从上到下为：达成3连拯救、失禁人数不超过1、全员守住尊严。</p></section>
+          <section><h3>结算评级</h3><ul><li><b>S：</b>全员获救，且三个挑战全部完成。</li><li><b>A：</b>成功率≥90%，且至少完成两个挑战。</li><li><b>B：</b>成功率≥75%。</li><li><b>C：</b>成功率≥50%。</li><li><b>D：</b>成功率不足50%。</li></ul><p>场景挑战从上到下为：达成3连拯救、失禁人数不超过1、全员守住尊严。总分用于纪录和比较，不再影响结算评级。</p></section>
         </div>
       </div>
     </section>
@@ -128,11 +128,15 @@
         <button data-skill="rush" class="skill-button"><span>📣 催促</span><small>10% + 30%÷占用隔间</small><b id="skill-rush-count">1</b></button>
       </div>
       <div class="game-area">
-        <section class="queue-area panel">
+        <div class="mobile-section-tabs panel" role="tablist" aria-label="手机游戏区域切换">
+          <button id="mobile-queue-tab" type="button" data-action="mobile-queue" role="tab" aria-controls="mobile-queue-panel" aria-selected="true">等待队列 0</button>
+          <button id="mobile-stalls-tab" type="button" data-action="mobile-stalls" role="tab" aria-controls="mobile-stalls-panel" aria-selected="false">隔间 0/0</button>
+        </div>
+        <section id="mobile-queue-panel" class="queue-area panel" role="tabpanel" aria-labelledby="mobile-queue-tab">
           <div class="area-title"><h3>等待队列</h3><div class="queue-title-actions"><span id="queue-count">0 人等待</span><button id="btn-urgency-sort" data-action="toggle-urgency-sort" class="small ghost">紧急度排序：关</button></div></div>
           <div id="arrival-feed" class="arrival-feed"></div><div id="queue-container"></div><div id="queue-empty" class="empty-state">下一波角色还在赶来……</div>
         </section>
-        <section class="stall-area panel"><div class="area-title"><h3>隔间状态</h3><span id="stall-hint">蹲厕省时，马桶加分</span></div><div id="stall-container" class="stall-grid"></div></section>
+        <section id="mobile-stalls-panel" class="stall-area panel" role="tabpanel" aria-labelledby="mobile-stalls-tab"><div class="area-title"><h3>隔间状态</h3><span id="stall-hint">蹲厕省时，马桶加分</span></div><div id="stall-container" class="stall-grid"></div></section>
       </div>
       <div id="toast" class="toast" role="status"></div>
       <div id="pause-overlay" class="pause-overlay" hidden><div><h2>游戏已暂停</h2><button data-action="pause" class="primary">继续调度</button></div></div>

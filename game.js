@@ -3,6 +3,7 @@
 const SAVE_KEY = 'toiletQueueCrisisSaveV3';
 const LEGACY_SAVE_KEY = 'toiletQueueCrisisSaveV2';
 const TICK_MS = 50;
+const RENDER_INTERVAL_MS = 100;
 const SKILL_LABELS = { comfort: '安抚', rush: '催促' };
 const SKILL_DROP_CHANCES = { '从容入厕': .5, '及时救援': .6, '极限抢救': .7, '千钧一发': .825 };
 const ORIGINAL_BG = './img/background0.png';
@@ -848,7 +849,7 @@ function startGame() {
     elapsed: 0, speed: 4, paused: false, ended: false, queue: [], pending: createWaveSchedule(roster, difficulty, toilets.squat + toilets.seated), urgencySort: Boolean(settings.defaultUrgencySort), bigIconMode: Boolean(settings.defaultBigIcons),
     stalls: createStalls(toilets), total: roster.length, arrived: 0, currentWave: 0,
     stats: { success: 0, fail: 0, score: 0, combo: 0, maxCombo: 0, totalWait: 0, assignments: 0, criticalSaves: 0 },
-    skills: { comfort: 1, rush: 1 }, difficulty, challenges: getChallenges(), outcomes: [], timer: null
+    skills: { comfort: 1, rush: 1 }, difficulty, challenges: getChallenges(), outcomes: [], mobileView: 'queue', lastRenderAt: performance.now(), timer: null
   };
   byId('queue-container').replaceChildren();
   byId('stall-container').replaceChildren();
@@ -894,7 +895,11 @@ function updateGame() {
     finishGame();
     return;
   }
-  renderGame();
+  const renderNow = performance.now();
+  if (renderNow - game.lastRenderAt >= RENDER_INTERVAL_MS) {
+    game.lastRenderAt = renderNow;
+    renderGame();
+  }
 }
 function updateQueue(delta) {
   const captainPresent = game.queue.some(girl => girl.trait.id === 'captain');
@@ -1073,6 +1078,12 @@ function useSkill(skill) {
   renderGame();
 }
 
+function setMobileGameView(view) {
+  if (!game || !['queue', 'stalls'].includes(view)) return;
+  game.mobileView = view;
+  renderGame();
+}
+
 function renderGame() {
   if (!game) return;
   byId('screen-game').classList.toggle('big-icon-mode', game.bigIconMode);
@@ -1086,6 +1097,14 @@ function renderGame() {
   byId('wave-status').textContent = game.pending.length ? `第 ${Math.max(1, game.currentWave)} 波 · 下批 ${formatTime(game.pending[0].time - game.elapsed)}` : '所有客流已到达';
   byId('mission-progress-fill').style.width = `${((game.stats.success + game.stats.fail) / game.total) * 100}%`;
   const occupiedCount = game.stalls.filter(stall => stall.occupant).length;
+  const mobileView = game.mobileView === 'stalls' ? 'stalls' : 'queue';
+  document.querySelector('.game-area').dataset.mobileView = mobileView;
+  byId('mobile-queue-tab').textContent = `等待队列 ${game.queue.length}`;
+  byId('mobile-stalls-tab').textContent = `隔间 ${occupiedCount}/${game.stalls.length}`;
+  byId('mobile-queue-tab').setAttribute('aria-selected', String(mobileView === 'queue'));
+  byId('mobile-stalls-tab').setAttribute('aria-selected', String(mobileView === 'stalls'));
+  byId('mobile-queue-tab').classList.toggle('active', mobileView === 'queue');
+  byId('mobile-stalls-tab').classList.toggle('active', mobileView === 'stalls');
   ['comfort', 'rush'].forEach(skill => {
     byId(`skill-${skill}-count`).textContent = game.skills[skill];
     const button = document.querySelector(`[data-skill="${skill}"]`);
@@ -1182,11 +1201,10 @@ function finishOrAbandonGame() {
   if (!confirm('确定放弃本局吗？当前进度不会结算，也不会写入游玩纪录。')) return;
   goHome();
 }
-function calculateGrade(score, successRate, stars) {
-  const normalized = score / Math.max(1, game.total);
-  if (successRate === 1 && stars === 3 && normalized >= 185) return 'S';
-  if (successRate >= .9 && normalized >= 145) return 'A';
-  if (successRate >= .72) return 'B';
+function calculateGrade(successRate, stars) {
+  if (successRate === 1 && stars === 3) return 'S';
+  if (successRate >= .9 && stars >= 2) return 'A';
+  if (successRate >= .75) return 'B';
   if (successRate >= .5) return 'C';
   return 'D';
 }
@@ -1199,7 +1217,7 @@ function finishGame() {
   const results = game.challenges.map(challenge => ({ ...challenge, passed: challenge.test(summary) }));
   const stars = results.filter(result => result.passed).length;
   const successRate = game.stats.success / game.total;
-  const grade = calculateGrade(game.stats.score, successRate, stars);
+  const grade = calculateGrade(successRate, stars);
   const recordKey = `${currentScene.id}_${settings.difficulty}`;
   const previous = saveData.records[recordKey];
   const score = Math.round(game.stats.score);
@@ -1351,6 +1369,8 @@ document.addEventListener('click', event => {
       'toggle-gallery-big': toggleGalleryBigMode,
       'toggle-game-big': () => { if (game) { game.bigIconMode = !game.bigIconMode; renderGame(); } },
       'toggle-urgency-sort': () => { if (game) { game.urgencySort = !game.urgencySort; renderGame(); } },
+      'mobile-queue': () => setMobileGameView('queue'),
+      'mobile-stalls': () => setMobileGameView('stalls'),
       pause: togglePause,
       'finish-or-abandon': finishOrAbandonGame,
       replay
