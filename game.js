@@ -36,31 +36,31 @@ const DIFFICULTIES = {
 };
 
 const TRAITS = [
-  { id: 'brave_face', name: '形象包袱', icon: '💄', desc: '低于40%后消耗加速，但极限救援额外加分' },
-  { id: 'discipline', name: '队首纪律', icon: '📏', desc: '排在队首时能镇定下来，忍耐消耗降低35%' },
-  { id: 'newcomer', name: '水土不服', icon: '🧳', desc: '到场前1分钟恶化很快，熬过后逐渐稳定' },
-  { id: 'professional', name: '职业微笑', icon: '🎀', desc: '安抚对她的效果提高60%' },
-  { id: 'coser', name: '繁复衣装', icon: '👗', desc: '使用马桶整理服装更快，且马桶加分更高' },
-  { id: 'homebody', name: '独处安心', icon: '🏠', desc: '队伍只剩3人以内时，忍耐消耗降低45%' },
+  { id: 'brave_face', name: '形象包袱', icon: '💄', desc: '忍耐高于40%时消耗降低15%，低于40%后消耗加快35%' },
+  { id: 'discipline', name: '从容表率', icon: '📏', desc: '忍耐度≥70%入厕时额外得分+50；无其他强化' },
+  { id: 'newcomer', name: '及时接应', icon: '🧳', desc: '到场前1分钟消耗加快；忍耐度≥65%入厕额外+45' },
+  { id: 'professional', name: '职业从容', icon: '🎀', desc: '忍耐度≥75%入厕时额外得分+55；无其他强化' },
+  { id: 'coser', name: '繁复衣装', icon: '👗', desc: '安排马桶额外+70，安排蹲厕额外−35' },
+  { id: 'homebody', name: '独处安心', icon: '🏠', desc: '队伍只剩3人以内时，忍耐消耗降低35%' },
   { id: 'rebel', name: '越催越快', icon: '🔥', desc: '她在隔间时，“催促”的推进量翻倍' },
   { id: 'reader', name: '沉浸阅读', icon: '📖', desc: '每等待2分钟会专注阅读，暂停自身消耗30秒' },
-  { id: 'runner', name: '田径姿势', icon: '🏃', desc: '使用蹲厕时额外减少15%占用时间' },
-  { id: 'nervous', name: '人群紧张', icon: '😰', desc: '队伍超过5人时消耗加速，人数变少后恢复正常' },
-  { id: 'lady', name: '洁癖千金', icon: '✨', desc: '马桶救援额外加分，安排蹲厕则得分降低' },
-  { id: 'miko', name: '和服层叠', icon: '⛩️', desc: '马桶更方便整理和服；蹲厕反而会延长占用' },
-  { id: 'potion', name: '魔药波动', icon: '🧪', desc: '忍耐消耗每30秒在缓慢与剧烈之间切换' },
-  { id: 'dignity', name: '教师威严', icon: '👓', desc: '低于25%时救援可获得大量额外分数' },
+  { id: 'runner', name: '蹲姿冲刺', icon: '🏃', desc: '安排蹲厕额外得分+40，安排马桶无修正' },
+  { id: 'nervous', name: '人群紧张', icon: '😰', desc: '队伍超过5人时消耗加快30%，人数较少时降低20%' },
+  { id: 'lady', name: '洁癖千金', icon: '✨', desc: '安排马桶追加结算前基础分的20%，最高+80；蹲厕不扣分' },
+  { id: 'miko', name: '和服层叠', icon: '⛩️', desc: '安排马桶额外+80，安排蹲厕额外−45' },
+  { id: 'potion', name: '魔药波动', icon: '🧪', desc: '忍耐消耗每30秒在降低35%与加快45%之间切换' },
+  { id: 'dignity', name: '教师定力', icon: '👓', desc: '忍耐低于35%后冷静应对，忍耐消耗降低35%' },
   { id: 'elf', name: '治愈共鸣', icon: '🌿', desc: '安抚她时，队伍中的其他人也会恢复1分钟' },
   { id: 'programmer', name: '紧急备份', icon: '💻', desc: '首次跌至20%时自动恢复90秒忍耐' },
   { id: 'apprentice', name: '笨拙加速', icon: '🍰', desc: '她在隔间时，催促额外推进50%' },
   { id: 'captain', name: '队长鼓舞', icon: '⚾', desc: '只要她仍在队伍，其他人的消耗降低10%' },
-  { id: 'princess', name: '公主礼遇', icon: '👑', desc: '安排马桶可获得固定额外分数' },
-  { id: 'biker', name: '蹲姿老练', icon: '🏍️', desc: '使用蹲厕时额外减少25%占用时间' }
+  { id: 'princess', name: '公主礼遇', icon: '👑', desc: '安排马桶追加结算前基础分的25%，最高+90；蹲厕不扣分' },
+  { id: 'biker', name: '蹲姿老练', icon: '🏍️', desc: '安排蹲厕额外得分+50，安排马桶无修正' }
 ];
 
 const NAMES = ['星奈', '紬', '柚葉', '琴音', '涼風', '奈緒', '真白', '結月', '千夏', '莉子', '詩織', '瑞希', '日鞠', '凛音', '沙耶', '千寻', '美波', '芽衣', '亚里沙', '初雪'];
-const PATIENCE_MINUTES = [14, 20, 9, 17, 8, 12, 7, 9, 11, 10, 14, 18, 9, 17, 9, 13, 7, 15, 18, 10];
-const TOILET_MINUTES = [6, 7, 3, 8, 4, 6, 3, 5, 4, 5, 7, 10, 4, 6, 4, 5, 3, 6, 8, 5];
+const PATIENCE_MINUTES = [10, 16, 8, 14, 10, 12, 6.5, 13, 11, 9, 16, 16, 10, 20, 11, 13, 8, 17, 19, 10];
+const TOILET_MINUTES = [3.8, 3.6, 3.2, 3.7, 5, 4.4, 3.1, 4.2, 3, 3.8, 4.5, 5, 3.6, 4.1, 3.7, 4, 3.3, 3.2, 4.6, 3.1];
 const IDENTITIES = ['恋爱脑的辣妹', '认真的风纪委员', '活泼的转学生', '咖啡厅头牌女仆', '知名 Coser', '慵懒的家里蹲', '暴躁的不良少女', '神秘的文学少女', '元气田径部员', '胆小的图书委员', '怕冷的千金大小姐', '传统的神社巫女', '迷糊的魔法使', '冰山御姐教师', '迷路的异界精灵', '天才少女程序员', '笨手笨脚的实习女仆', '热血的棒球队长', '出逃的异国公主', '暴走族大姐头'];
 const BIOS = [
   '昨天约会吃了变态辣火锅，现在正为了不破坏形象而死死坚持。', '绝不允许自己在学校发生不雅意外，哪怕双腿发抖也要守住威严。',
@@ -420,12 +420,12 @@ function persist() {
 function buildCharacters() {
   return NAMES.map((name, id) => {
     const override = saveData.characterOverrides[id] || {};
-    const defaultPatience = PATIENCE_MINUTES[id] * 45;
-    const defaultToilet = TOILET_MINUTES[id] * 36;
+    const defaultPatience = Math.round(PATIENCE_MINUTES[id] * 60);
+    const defaultToilet = Math.round(TOILET_MINUTES[id] * 60);
     return {
       id, name, identity: IDENTITIES[id], bio: BIOS[id], face: `./img/girl${id}.png`, color: `hsl(${id * 18}, 70%, 72%)`,
-      patienceMax: clamp(Number(override.patience) || defaultPatience, 120, 2400),
-      toiletTimeMax: clamp(Number(override.toilet) || defaultToilet, 60, 600),
+      patienceMax: clamp(Number(override.patience) || defaultPatience, 300, 1200),
+      toiletTimeMax: clamp(Number(override.toilet) || defaultToilet, 120, 600),
       defaultPatience, defaultToilet, trait: TRAITS[id]
     };
   });
@@ -644,7 +644,7 @@ function renderGallery() {
     const stats = document.createElement('div');
     stats.className = 'character-stats';
     if (settings.experimental) {
-      stats.innerHTML = `<label>忍耐秒 <input data-char="${character.id}" data-stat="patience" type="number" min="120" max="2400" value="${Math.round(character.patienceMax)}"></label><label>占用秒 <input data-char="${character.id}" data-stat="toilet" type="number" min="60" max="600" value="${Math.round(character.toiletTimeMax)}"></label>`;
+      stats.innerHTML = `<label>忍耐秒（300～1200）<input data-char="${character.id}" data-stat="patience" type="number" min="300" max="1200" value="${Math.round(character.patienceMax)}"></label><label>占用秒（120～600）<input data-char="${character.id}" data-stat="toilet" type="number" min="120" max="600" value="${Math.round(character.toiletTimeMax)}"></label>`;
     } else {
       stats.innerHTML = `<span>⏱️ 忍耐 ${formatTime(character.patienceMax)}</span><span>🚽 基础占用 ${formatTime(character.toiletTimeMax)}</span>`;
     }
@@ -677,7 +677,7 @@ function updateCharacterStat(input) {
   const character = characters.find(item => item.id === Number(input.dataset.char));
   if (!character) return;
   const stat = input.dataset.stat;
-  const limits = stat === 'patience' ? [120, 2400] : [60, 600];
+  const limits = stat === 'patience' ? [300, 1200] : [120, 600];
   const value = clamp(Number(input.value) || limits[0], ...limits);
   character[stat === 'patience' ? 'patienceMax' : 'toiletTimeMax'] = value;
   saveData.characterOverrides[character.id] = {
@@ -704,7 +704,7 @@ function renderVictimSelection() {
     card.className = `gallery-item${selectedVictims.includes(character.id) ? ' selected' : ''}`;
     card.dataset.characterId = character.id;
     card.tabIndex = 0;
-    card.innerHTML = `<div class="gallery-header"><div class="girl-avatar" style="background:${character.color}"><img ${imageAttributes(character.face, character.name)}></div><div><h4>${character.name}</h4><span class="trait-chip">${character.trait.icon} ${character.trait.name}</span></div></div><div class="gallery-desc">${character.identity} · 忍耐 ${formatTime(character.patienceMax)} · 基础占用 ${formatTime(character.toiletTimeMax)}</div>`;
+    card.innerHTML = `<div class="gallery-header"><div class="girl-avatar" style="background:${character.color}"><img ${imageAttributes(character.face, character.name)}></div><div><h4>${character.name}</h4><span class="trait-chip">${character.trait.icon} ${character.trait.name}</span></div></div><div class="gallery-desc">${character.identity} · 忍耐 ${formatTime(character.patienceMax)} · 马桶 ${formatTime(character.toiletTimeMax)}<b class="selection-ability">能力：${character.trait.desc}</b></div>`;
     container.appendChild(card);
   });
   byId('selected-count').textContent = selectedVictims.length;
@@ -878,12 +878,12 @@ function updateQueue(delta) {
 function getTraitDecay(girl, queueIndex, ratio) {
   const waited = girl.waitTime;
   switch (girl.trait.id) {
-    case 'brave_face': return ratio < .4 ? 1.55 : .92;
-    case 'discipline': return queueIndex === 0 ? .65 : 1;
-    case 'newcomer': return waited < 60 ? 1.55 : .82;
-    case 'homebody': return game.queue.length <= 3 ? .55 : 1;
-    case 'nervous': return game.queue.length > 5 ? 1.45 : .9;
-    case 'potion': return Math.floor(waited / 30) % 2 === 0 ? .55 : 1.6;
+    case 'brave_face': return ratio < .4 ? 1.35 : .85;
+    case 'newcomer': return waited < 60 ? 1.4 : .9;
+    case 'homebody': return game.queue.length <= 3 ? .65 : 1;
+    case 'nervous': return game.queue.length > 5 ? 1.3 : .8;
+    case 'potion': return Math.floor(waited / 30) % 2 === 0 ? .65 : 1.45;
+    case 'dignity': return ratio < .35 ? .65 : 1;
     default: return 1;
   }
 }
@@ -919,27 +919,48 @@ function addOutcome(girl, success, details = {}) {
 function maybeGrantSkill(entryTier, patienceRatio) {
   const chance = entryTier === '千钧一发' && patienceRatio <= .05 ? 1 : (SKILL_DROP_CHANCES[entryTier] ?? .5);
   if (Math.random() >= chance) return null;
-  const skill = randomFrom(Object.keys(SKILL_LABELS));
+  let skill;
+  if (game.skills.focus <= 0) {
+    skill = randomFrom(Object.keys(SKILL_LABELS));
+  } else {
+    const missingStandardSkills = ['comfort', 'rush'].filter(key => game.skills[key] <= 0);
+    if (missingStandardSkills.length) {
+      skill = randomFrom(missingStandardSkills);
+    } else {
+      const roll = Math.random();
+      skill = roll < .4 ? 'comfort' : roll < .8 ? 'rush' : 'focus';
+    }
+  }
   game.skills[skill] += 1;
   return skill;
 }
+function getExtraScore(girl, toiletType, patienceRatio, scoreBeforeExtra) {
+  switch (girl.trait.id) {
+    case 'discipline': return patienceRatio >= .7 ? 50 : 0;
+    case 'newcomer': return patienceRatio >= .65 ? 45 : 0;
+    case 'professional': return patienceRatio >= .75 ? 55 : 0;
+    case 'coser': return toiletType === 'seated' ? 70 : -35;
+    case 'runner': return toiletType === 'squat' ? 40 : 0;
+    case 'lady': return toiletType === 'seated' ? Math.min(80, scoreBeforeExtra * .2) : 0;
+    case 'miko': return toiletType === 'seated' ? 80 : -45;
+    case 'princess': return toiletType === 'seated' ? Math.min(90, scoreBeforeExtra * .25) : 0;
+    case 'biker': return toiletType === 'squat' ? 50 : 0;
+    default: return 0;
+  }
+}
 function rescueOccupant(stall) {
   const girl = stall.occupant;
-  const urgency = 1 - clamp(girl.patience / girl.effectiveMax, 0, 1);
+  const patienceRatio = clamp(girl.patience / girl.effectiveMax, 0, 1);
   game.stats.success += 1;
   game.stats.combo += 1;
   game.stats.maxCombo = Math.max(game.stats.maxCombo, game.stats.combo);
-  if (urgency > .65) game.stats.criticalSaves += 1;
-  let traitBonus = 0;
-  if (girl.trait.id === 'brave_face' && urgency >= .6) traitBonus += 80;
-  if (girl.trait.id === 'coser' && stall.type === 'seated') traitBonus += 45;
-  if (girl.trait.id === 'lady') traitBonus += stall.type === 'seated' ? 90 : -40;
-  if (girl.trait.id === 'dignity' && urgency >= .75) traitBonus += 140;
-  if (girl.trait.id === 'princess' && stall.type === 'seated') traitBonus += 100;
-  const baseScore = 100 + urgency * 100 + game.stats.combo * 12 + traitBonus;
+  if (patienceRatio < .35) game.stats.criticalSaves += 1;
+  const scoreBeforeExtra = 100 + patienceRatio * 100 + game.stats.combo * 12;
+  const extraScore = getExtraScore(girl, stall.type, patienceRatio, scoreBeforeExtra);
+  const baseScore = scoreBeforeExtra + extraScore;
   const facilityMultiplier = 5 / Math.max(1, game.stalls.length);
   game.stats.score += Math.round(baseScore * stall.scoreMultiplier * game.difficulty.score * facilityMultiplier);
-  addOutcome(girl, true, { entryTier: girl.entryTier, toiletType: stall.type });
+  addOutcome(girl, true, { entryTier: girl.entryTier, toiletType: stall.type, extraScore: Math.round(extraScore) });
   const rewardedSkill = maybeGrantSkill(girl.entryTier, girl.entryPatienceRatio);
   stall.occupant = null;
   stall.timeLeft = 0;
@@ -948,12 +969,7 @@ function rescueOccupant(stall) {
   showToast(`${girl.name} 成功解脱 · 连救 ×${game.stats.combo}${rewardedSkill ? ` · 获得「${SKILL_LABELS[rewardedSkill]}」` : ''}`);
 }
 function getToiletDuration(girl, toiletType) {
-  let multiplier = toiletType === 'squat' ? .8 : 1;
-  if (girl.trait.id === 'coser' && toiletType === 'seated') multiplier *= .72;
-  if (girl.trait.id === 'runner' && toiletType === 'squat') multiplier *= .85;
-  if (girl.trait.id === 'miko') multiplier *= toiletType === 'seated' ? .7 : 1.25;
-  if (girl.trait.id === 'biker' && toiletType === 'squat') multiplier *= .75;
-  return girl.toiletTimeMax * multiplier;
+  return girl.toiletTimeMax * (toiletType === 'squat' ? .8 : 1);
 }
 function assignStall(characterId, toiletType) {
   if (!game || game.paused) return;
@@ -996,27 +1012,30 @@ function useSkill(skill) {
   if (!game || game.paused || game.skills[skill] <= 0) return;
   if (skill === 'comfort') {
     if (!game.queue.length) { showToast('队伍中暂时没有人需要安抚'); return; }
+    const baseComfortRatio = .1 + .5 / game.queue.length;
     const elfPresent = game.queue.some(girl => girl.trait.id === 'elf');
     game.queue.forEach(girl => {
-      const comfortRatio = .1 * (girl.trait.id === 'professional' ? 1.6 : 1);
+      const comfortRatio = baseComfortRatio;
       girl.patience = Math.min(girl.effectiveMax, girl.patience + girl.effectiveMax * comfortRatio + (elfPresent && girl.trait.id !== 'elf' ? 60 : 0));
       girl.quote = withEmoji(COMFORT_DIALOGUES[girl.id] || '谢谢……感觉还能再坚持一下！', 'comfort');
       girl.nextQuote = Math.max(girl.nextQuote, game.elapsed + 24);
     });
-    showToast(`全场安抚生效：${game.queue.length} 人恢复最大忍耐的 10%`);
+    showToast(`全场安抚生效：每人基础恢复最大忍耐的 ${Math.round(baseComfortRatio * 1000) / 10}%`);
   } else if (skill === 'rush') {
     const occupied = game.stalls.filter(stall => stall.occupant);
     if (!occupied.length) { showToast('没有可以催促进度的隔间'); return; }
+    const baseReduction = .1 + .3 / occupied.length;
     occupied.forEach(stall => {
-      let reduction = .1;
-      if (stall.occupant.trait.id === 'rebel') reduction = .2;
-      if (stall.occupant.trait.id === 'apprentice') reduction = .15;
+      let reduction = baseReduction;
+      if (stall.occupant.trait.id === 'rebel') reduction *= 2;
+      if (stall.occupant.trait.id === 'apprentice') reduction *= 1.5;
+      reduction = Math.min(.9, reduction);
       stall.timeLeft = Math.max(1, stall.timeLeft * (1 - reduction));
       stall.occupant.stallQuote = withEmoji(RUSH_DIALOGUES[stall.occupant.id] || '外面别催啦，我已经在尽快了！', 'inside');
       stall.occupant.stallQuoteUntil = game.elapsed + 24;
       stall.occupant.nextStallQuote = Math.max(stall.occupant.nextStallQuote, game.elapsed + 24);
     });
-    showToast(`全体催促生效：${occupied.length} 个隔间剩余时间 −10%`);
+    showToast(`全体催促生效：每个隔间基础加速 ${Math.round(baseReduction * 1000) / 10}%`);
   } else if (skill === 'focus') {
     game.autoDispatchUntil = Math.max(game.autoDispatchUntil, game.elapsed) + 60;
     showToast('全场疏导启动：1:00 内自动救援剩余 ≤3 秒者');
@@ -1038,10 +1057,21 @@ function renderGame() {
   byId('combo-status').textContent = `连救 ×${game.stats.combo}`;
   byId('wave-status').textContent = game.pending.length ? `第 ${Math.max(1, game.currentWave)} 波 · 下批 ${formatTime(game.pending[0].time - game.elapsed)}` : '所有客流已到达';
   byId('mission-progress-fill').style.width = `${((game.stats.success + game.stats.fail) / game.total) * 100}%`;
+  const occupiedCount = game.stalls.filter(stall => stall.occupant).length;
   ['comfort', 'rush', 'focus'].forEach(skill => {
     byId(`skill-${skill}-count`).textContent = game.skills[skill];
-    document.querySelector(`[data-skill="${skill}"]`).disabled = game.skills[skill] <= 0;
+    const button = document.querySelector(`[data-skill="${skill}"]`);
+    const hasTarget = skill === 'comfort' ? game.queue.length > 0 : skill === 'rush' ? occupiedCount > 0 : true;
+    button.disabled = game.skills[skill] <= 0 || !hasTarget;
   });
+  const comfortHint = document.querySelector('[data-skill="comfort"] small');
+  comfortHint.textContent = game.queue.length
+    ? `每人恢复 ${Math.round((.1 + .5 / game.queue.length) * 1000) / 10}%`
+    : '排队区无人，暂不可用';
+  const rushHint = document.querySelector('[data-skill="rush"] small');
+  rushHint.textContent = occupiedCount
+    ? `每间基础加速 ${Math.round((.1 + .3 / occupiedCount) * 1000) / 10}%`
+    : '厕所无人，暂不可用';
   const focusButton = document.querySelector('[data-skill="focus"]');
   const focusActive = game.elapsed < game.autoDispatchUntil;
   focusButton.classList.toggle('skill-active', focusActive);
@@ -1179,8 +1209,9 @@ function finishGame() {
   characterBox.replaceChildren(...orderedOutcomes.map(outcome => {
     const card = document.createElement('article');
     card.className = `result-character${outcome.success ? ' success' : ' failed'}`;
+    const extraScoreText = outcome.extraScore ? ` · 额外得分 ${outcome.extraScore > 0 ? '+' : ''}${outcome.extraScore}` : '';
     const detail = outcome.success
-      ? `${outcome.entryTier || '顺利入厕'} · ${outcome.toiletType === 'squat' ? '蹲厕' : '马桶'}`
+      ? `${outcome.entryTier || '顺利入厕'} · ${outcome.toiletType === 'squat' ? '蹲厕' : '马桶'}${extraScoreText}`
       : (outcome.reason || '救援失败');
     card.innerHTML = `<img ${imageAttributes(outcome.face, outcome.name)}><div><div class="result-character-head"><strong>${outcome.name}</strong><span>${outcome.success ? '成功' : '失败'} · ${detail}</span></div><p>${outcome.comment}</p></div>`;
     return card;
