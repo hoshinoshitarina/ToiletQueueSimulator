@@ -36,15 +36,15 @@ const DIFFICULTIES = {
 };
 
 const TRAITS = [
-  { id: 'brave_face', name: '形象包袱', icon: '💄', desc: '忍耐高于40%时消耗降低15%，低于40%后消耗加快35%' },
+  { id: 'brave_face', name: '形象包袱', icon: '💄', desc: '忍耐高于40%时消耗降低15%，低于40%后消耗加快20%' },
   { id: 'discipline', name: '队首纪律', icon: '📏', desc: '排在队首时能镇定下来，忍耐消耗降低25%' },
   { id: 'newcomer', name: '水土不服', icon: '🧳', desc: '到场前1分钟忍耐消耗加快40%，之后降低10%' },
   { id: 'professional', name: '职业微笑', icon: '🎀', desc: '安抚对她的恢复效果提高40%' },
   { id: 'coser', name: '繁复衣装', icon: '👗', desc: '安排马桶额外+70，安排蹲厕额外−35' },
   { id: 'homebody', name: '独处安心', icon: '🏠', desc: '队伍只剩3人以内时，忍耐消耗降低35%' },
-  { id: 'rebel', name: '越催越快', icon: '🔥', desc: '她在隔间时，“催促”的推进量翻倍' },
+  { id: 'rebel', name: '越催越快', icon: '🔥', desc: '她在隔间时，“催促”的推进量提高70%' },
   { id: 'reader', name: '沉浸阅读', icon: '📖', desc: '每等待2分钟会专注阅读，暂停自身消耗30秒' },
-  { id: 'runner', name: '蹲姿冲刺', icon: '🏃', desc: '安排蹲厕额外得分+40' },
+  { id: 'runner', name: '蹲姿冲刺', icon: '🏃', desc: '安排蹲厕额外得分+65' },
   { id: 'nervous', name: '人群紧张', icon: '😰', desc: '队伍超过5人时消耗加快30%；忍耐度≥65%入厕额外+60' },
   { id: 'lady', name: '洁癖千金', icon: '✨', desc: '使用马桶时，额外得分等于当前忍耐度×100' },
   { id: 'miko', name: '和服层叠', icon: '⛩️', desc: '安排马桶额外+80，安排蹲厕额外−45' },
@@ -55,12 +55,12 @@ const TRAITS = [
   { id: 'apprentice', name: '笨拙加速', icon: '🍰', desc: '她在隔间时，催促额外推进50%' },
   { id: 'captain', name: '队长鼓舞', icon: '⚾', desc: '只要她仍在队伍，其他人的消耗降低10%' },
   { id: 'princess', name: '公主礼遇', icon: '👑', desc: '使用马桶时，额外得分等于当前忍耐度×100' },
-  { id: 'biker', name: '蹲姿老练', icon: '🏍️', desc: '安排蹲厕额外得分+50' }
+  { id: 'biker', name: '蹲姿老练', icon: '🏍️', desc: '安排蹲厕额外得分+80' }
 ];
 
 const NAMES = ['星奈', '紬', '柚葉', '琴音', '涼風', '奈緒', '真白', '結月', '千夏', '莉子', '詩織', '瑞希', '日鞠', '凛音', '沙耶', '千寻', '美波', '芽衣', '亚里沙', '初雪'];
-const PATIENCE_MINUTES = [8.5, 9, 7, 10, 7.5, 9, 15, 11, 10.5, 6, 11.5, 9, 6.5, 15, 9, 10, 7, 13, 13, 15];
-const TOILET_MINUTES = [4.2, 3.8, 3.5, 4, 5, 4.5, 3.6, 4.4, 3, 4.2, 4.6, 5, 4, 4.3, 4, 4.2, 3.8, 3.2, 4.8, 3.4];
+const PATIENCE_MINUTES = [8.5, 9, 7, 10, 7.5, 9, 15, 11, 10.5, 6, 11.5, 9, 6.5, 13.5, 9, 10, 7, 13, 13, 15];
+const TOILET_MINUTES = [4.2, 3.8, 3.5, 4, 5, 4.5, 3.6, 4.4, 3, 4.2, 4.6, 5, 4, 4.3, 4, 4.2, 3.8, 3.67, 4.8, 3.75];
 const IDENTITIES = ['恋爱脑的辣妹', '认真的风纪委员', '活泼的转学生', '咖啡厅头牌女仆', '知名 Coser', '慵懒的家里蹲', '暴躁的不良少女', '神秘的文学少女', '元气田径部员', '胆小的图书委员', '怕冷的千金大小姐', '传统的神社巫女', '迷糊的魔法使', '冰山御姐教师', '迷路的异界精灵', '天才少女程序员', '笨手笨脚的实习女仆', '热血的棒球队长', '出逃的异国公主', '暴走族大姐头'];
 const BIOS = [
   '昨天约会吃了变态辣火锅，现在正为了不破坏形象而死死坚持。', '绝不允许自己在学校发生不雅意外，哪怕双腿发抖也要守住威严。',
@@ -880,7 +880,7 @@ function updateQueue(delta) {
 function getTraitDecay(girl, queueIndex, ratio) {
   const waited = girl.waitTime;
   switch (girl.trait.id) {
-    case 'brave_face': return ratio < .4 ? 1.35 : .85;
+    case 'brave_face': return ratio < .4 ? 1.2 : .85;
     case 'discipline': return queueIndex === 0 ? .75 : 1;
     case 'newcomer': return waited < 60 ? 1.4 : .9;
     case 'homebody': return game.queue.length <= 3 ? .65 : 1;
@@ -940,13 +940,13 @@ function maybeGrantSkill(entryTier, patienceRatio) {
 function getExtraScore(girl, toiletType, patienceRatio) {
   switch (girl.trait.id) {
     case 'coser': return toiletType === 'seated' ? 70 : -35;
-    case 'runner': return toiletType === 'squat' ? 40 : 0;
+    case 'runner': return toiletType === 'squat' ? 65 : 0;
     case 'nervous': return patienceRatio >= .65 ? 60 : 0;
     case 'lady': return toiletType === 'seated' ? patienceRatio * 100 : 0;
     case 'miko': return toiletType === 'seated' ? 80 : -45;
     case 'potion': return patienceRatio >= .65 ? 60 : 0;
     case 'princess': return toiletType === 'seated' ? patienceRatio * 100 : 0;
-    case 'biker': return toiletType === 'squat' ? 50 : 0;
+    case 'biker': return toiletType === 'squat' ? 80 : 0;
     default: return 0;
   }
 }
@@ -1029,7 +1029,7 @@ function useSkill(skill) {
     const baseReduction = .1 + .3 / occupied.length;
     occupied.forEach(stall => {
       let reduction = baseReduction;
-      if (stall.occupant.trait.id === 'rebel') reduction *= 2;
+      if (stall.occupant.trait.id === 'rebel') reduction *= 1.7;
       if (stall.occupant.trait.id === 'apprentice') reduction *= 1.5;
       reduction = Math.min(.9, reduction);
       stall.timeLeft = Math.max(1, stall.timeLeft * (1 - reduction));
